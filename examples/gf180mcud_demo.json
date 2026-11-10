@@ -1,0 +1,36 @@
+{
+  "mode": "ccw",
+  "align": "center",
+  "square": true,
+  "cellh": 120.0,
+  "std": {
+    "pitch": 100,
+    "w": 60.0,
+    "h": 60.0
+  },
+  "rf": {
+    "pitch": 100.0,
+    "w": 70.0,
+    "h": 70.0
+  },
+  "fixed_die": false,
+  "die_w": 2000.0,
+  "die_h": 2000.0,
+  "pdk": "gf180mcuD",
+  "package": "",
+  "fixed_core": false,
+  "core_w": 1500.0,
+  "core_h": 1200.0,
+  "grid": 10.0,
+  "halo": 20.0,
+  "spacing": 100.0,
+  "max_flyline": 900.0,
+  "max_supply_dist": 1000.0,
+  "format": 2,
+  "sides": {
+    "T": "VDD\nVSS\nDVDD [iovdd]\nDVSS [iovss]\nsel[0] [in]\nsel[1] [in]\nirq [out]",
+    "R": "DVDD [iovdd]\nDVSS [iovss]\nbidir[0] [io]\nbidir[1] [io]\nbidir[2] [io]\nbidir[3] [io]\nbidir[4] [io]",
+    "B": "out[0] [out]\nout[1] [out]\nout[2] [out]\nout[3] [out]\nout[4] [out]\nout[5] [out]\nout[6] [out]",
+    "L": "clk [in]\nrst_n [in]\nenable [in]\nVDD\nVSS\nain[0] [analog]\nain[1] [analog]"
+  }
+}
