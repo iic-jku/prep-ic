@@ -1,0 +1,36 @@
+{
+  "mode": "ccw",
+  "align": "center",
+  "square": false,
+  "cellh": 120.0,
+  "std": {
+    "pitch": 80.0,
+    "w": 60.0,
+    "h": 60.0
+  },
+  "rf": {
+    "pitch": 100.0,
+    "w": 70.0,
+    "h": 70.0
+  },
+  "fixed_die": true,
+  "die_w": 3932,
+  "die_h": 5122,
+  "pdk": "gf180mcuD",
+  "package": "",
+  "fixed_core": false,
+  "core_w": 1500.0,
+  "core_h": 1200.0,
+  "grid": 10.0,
+  "halo": 20.0,
+  "spacing": 100.0,
+  "max_flyline": 900.0,
+  "max_supply_dist": 1000.0,
+  "format": 2,
+  "sides": {
+    "T": "bidir[26] [io] @186.4\nbidir[27] [io] @186.4\nbidir[28] [io] @186.4\nbidir[29] [io] @186.4\nbidir[30] [io] @186.4\nbidir[31] [io] @186.4\nbidir[32] [io] @186.4\nbidir[33] [io] @186.4\nDVSS [iovss] [lock] @186.4\nbidir[34] [io] @186.4\nbidir[35] [io] @186.4\nbidir[36] [io] @186.4\nbidir[37] [io] @186.4\nbidir[38] [io] @186.4\nbidir[39] [io] @186.4\nanalog[0] [analog] @186.4\nanalog[1] [analog] @186.4",
+    "R": "DVDD [iovdd] [lock] @218\nDVSS [iovss] [lock] @218\nbidir[14] [io] @218\nbidir[15] [io] @218\nbidir[16] [io] @218\nbidir[17] [io] @218\nbidir[18] [io] @218\nbidir[19] [io] @218\nDVDD [iovdd] [lock] @218\nDVSS [iovss] [lock] @218\nbidir[20] [io] @218\nbidir[21] [io] @218\nbidir[22] [io] @218\nbidir[23] [io] @218\nbidir[24] [io] @218\nbidir[25] [io] @218\nVSS [vss] [lock] @218\nVDD [vdd] [lock] @218\nDVSS [iovss] [lock] @218\nDVDD [iovdd] [lock] @218",
+    "B": "clk [in] [schmitt] @186.4\nrst_n [in] @186.4\nbidir[0] [io] @186.4\nbidir[1] [io] @186.4\nbidir[2] [io] @186.4\nbidir[3] [io] @186.4\nbidir[4] [io] @186.4\nbidir[5] [io] @186.4\nDVSS [iovss] [lock] @186.4\nbidir[6] [io] @186.4\nbidir[7] [io] @186.4\nbidir[8] [io] @186.4\nbidir[9] [io] @186.4\nbidir[10] [io] @186.4\nbidir[11] [io] @186.4\nbidir[12] [io] @186.4\nbidir[13] [io] @186.4",
+    "L": "input[0] [in] @218\ninput[1] [in] @218\nDVSS [iovss] [lock] @218\nDVDD [iovdd] [lock] @218\ninput[2] [in] @218\ninput[3] [in] @218\ninput[4] [in] @218\ninput[5] [in] @218\nDVSS [iovss] [lock] @218\nDVDD [iovdd] [lock] @218\ninput[6] [in] @218\ninput[7] [in] @218\ninput[8] [in] @218\ninput[9] [in] @218\ninput[10] [in] @218\ninput[11] [in] @218\nVSS [vss] [lock] @218\nVDD [vdd] [lock] @218\nDVSS [iovss] [lock] @218\nDVDD [iovdd] [lock] @218"
+  }
+}

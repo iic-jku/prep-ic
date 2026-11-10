@@ -1,0 +1,36 @@
+{
+  "mode": "ccw",
+  "align": "center",
+  "square": false,
+  "cellh": 120.0,
+  "std": {
+    "pitch": 80.0,
+    "w": 60.0,
+    "h": 60.0
+  },
+  "rf": {
+    "pitch": 100.0,
+    "w": 70.0,
+    "h": 70.0
+  },
+  "fixed_die": true,
+  "die_w": 3932,
+  "die_h": 2531,
+  "pdk": "gf180mcuD",
+  "package": "",
+  "fixed_core": false,
+  "core_w": 1500.0,
+  "core_h": 1200.0,
+  "grid": 10.0,
+  "halo": 20.0,
+  "spacing": 100.0,
+  "max_flyline": 900.0,
+  "max_supply_dist": 1000.0,
+  "format": 2,
+  "sides": {
+    "T": "bidir[26] [io] @132\nbidir[27] [io] @132\nbidir[28] [io] @132\nbidir[29] [io] @132\nDVDD [iovdd] [lock] @132\nDVSS [iovss] [lock] @132\nbidir[30] [io] @132\nbidir[31] [io] @132\nbidir[32] [io] @132\nbidir[33] [io] @132\nbidir[34] [io] @132\nbidir[35] [io] @132\nbidir[36] [io] @132\nbidir[37] [io] @132\nbidir[38] [io] @132\nbidir[39] [io] @132\nbidir[40] [io] @132\nbidir[41] [io] @132\nDVDD [iovdd] [lock] @132\nDVSS [iovss] [lock] @132\nbidir[42] [io] @132\nbidir[43] [io] @132\nbidir[44] [io] @132\nbidir[45] [io] @132",
+    "R": "DVSS [iovss] [lock] @147.4\nDVDD [iovdd] [lock] @147.4\nbidir[18] [io] @147.4\nbidir[19] [io] @147.4\nbidir[20] [io] @147.4\nbidir[21] [io] @147.4\nbidir[22] [io] @147.4\nbidir[23] [io] @147.4\nbidir[24] [io] @147.4\nbidir[25] [io] @147.4\nDVSS [iovss] [lock] @147.4\nDVDD [iovdd] [lock] @147.4",
+    "B": "clk [in] [schmitt] @132\nrst_n [in] @132\nbidir[0] [io] @132\nbidir[1] [io] @132\nDVSS [iovss] [lock] @132\nDVDD [iovdd] [lock] @132\nbidir[2] [io] @132\nbidir[3] [io] @132\nbidir[4] [io] @132\nbidir[5] [io] @132\nbidir[6] [io] @132\nbidir[7] [io] @132\nbidir[8] [io] @132\nbidir[9] [io] @132\nbidir[10] [io] @132\nbidir[11] [io] @132\nbidir[12] [io] @132\nbidir[13] [io] @132\nDVSS [iovss] [lock] @132\nDVDD [iovdd] [lock] @132\nbidir[14] [io] @132\nbidir[15] [io] @132\nbidir[16] [io] @132\nbidir[17] [io] @132",
+    "L": "DVDD [iovdd] [lock] @147.4\nDVSS [iovss] [lock] @147.4\nanalog[0] [analog] @147.4\nanalog[1] [analog] @147.4\nanalog[2] [analog] @147.4\nanalog[3] [analog] @147.4\ninput[0] [in] @147.4\ninput[1] [in] @147.4\ninput[2] [in] @147.4\ninput[3] [in] @147.4\nVDD [vdd] [lock] @147.4\nVSS [vss] [lock] @147.4"
+  }
+}

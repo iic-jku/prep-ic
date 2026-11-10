@@ -1,0 +1,36 @@
+{
+  "mode": "ccw",
+  "align": "center",
+  "square": false,
+  "cellh": 120.0,
+  "std": {
+    "pitch": 80.0,
+    "w": 60.0,
+    "h": 60.0
+  },
+  "rf": {
+    "pitch": 100.0,
+    "w": 70.0,
+    "h": 70.0
+  },
+  "fixed_die": true,
+  "die_w": 1936,
+  "die_h": 5122,
+  "pdk": "gf180mcuD",
+  "package": "",
+  "fixed_core": false,
+  "core_w": 1500.0,
+  "core_h": 1200.0,
+  "grid": 10.0,
+  "halo": 20.0,
+  "spacing": 100.0,
+  "max_flyline": 900.0,
+  "max_supply_dist": 1000.0,
+  "format": 2,
+  "sides": {
+    "T": "analog[0] [analog] @146.7\nanalog[1] [analog] @146.7\nanalog[2] [analog] @146.7\nDVDD [iovdd] [lock] @146.7\nDVSS [iovss] [lock] @146.7\nanalog[3] [analog] @146.7\nanalog[4] [analog] @146.7\nanalog[5] [analog] @146.7",
+    "R": "bidir[0] [io] @155.7\nbidir[1] [io] @155.7\nDVSS [iovss] [lock] @155.7\nDVDD [iovdd] [lock] @155.7\nbidir[2] [io] @155.7\nbidir[3] [io] @155.7\nbidir[4] [io] @155.7\nbidir[5] [io] @155.7\nbidir[6] [io] @155.7\nbidir[7] [io] @155.7\nbidir[8] [io] @155.7\nbidir[9] [io] @155.7\nbidir[10] [io] @155.7\nDVSS [iovss] [lock] @155.7\nDVDD [iovdd] [lock] @155.7\nbidir[11] [io] @155.7\nbidir[12] [io] @155.7\nbidir[13] [io] @155.7\nbidir[14] [io] @155.7\nbidir[15] [io] @155.7\nbidir[16] [io] @155.7\nbidir[17] [io] @155.7\nbidir[18] [io] @155.7\nbidir[19] [io] @155.7\nDVSS [iovss] [lock] @155.7\nDVDD [iovdd] [lock] @155.7\nbidir[20] [io] @155.7\nbidir[21] [io] @155.7",
+    "B": "clk [in] [schmitt] @146.7\nrst_n [in] @146.7\ninput[0] [in] @146.7\nDVSS [iovss] [lock] @146.7\nDVDD [iovdd] [lock] @146.7\ninput[1] [in] @146.7\ninput[2] [in] @146.7\ninput[3] [in] @146.7",
+    "L": "bidir[22] [io] @155.7\nbidir[23] [io] @155.7\nDVDD [iovdd] [lock] @155.7\nDVSS [iovss] [lock] @155.7\nbidir[24] [io] @155.7\nbidir[25] [io] @155.7\nbidir[26] [io] @155.7\nbidir[27] [io] @155.7\nbidir[28] [io] @155.7\nbidir[29] [io] @155.7\nbidir[30] [io] @155.7\nbidir[31] [io] @155.7\nbidir[32] [io] @155.7\nDVDD [iovdd] [lock] @155.7\nDVSS [iovss] [lock] @155.7\nbidir[33] [io] @155.7\nbidir[34] [io] @155.7\nbidir[35] [io] @155.7\nbidir[36] [io] @155.7\nbidir[37] [io] @155.7\nbidir[38] [io] @155.7\nbidir[39] [io] @155.7\nbidir[40] [io] @155.7\nVDD [vdd] [lock] @155.7\nVSS [vss] [lock] @155.7\nbidir[41] [io] @155.7\nbidir[42] [io] @155.7\nbidir[43] [io] @155.7"
+  }
+}
