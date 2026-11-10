@@ -41,7 +41,7 @@ There is one core in the picture: the LibreLane `CORE_AREA`, the die minus twice
 - **Pins.** A pin's position is the center of the bounding box of its first port shape, or the macro center for a pin without shapes. Power pins (`USE POWER`, `USE GROUND`) are no pad candidates. They name the pads that *Suggest Supply Pads* adds.
 - **Rotation** is in 90° steps clockwise, without mirroring. `macros.yaml` writes 0, 90, 180 and 270° as `N`, `E`, `S` and `W`.
 - **Placeholders** have no directory, a typed size and no pins. They are left out of `macros.yaml` with a comment.
-- **Views.** `macros.yaml` always names `gds` and `lef`, which LibreLane requires, and adds `vh`, `nl`, `pnl`, `lib` and `spef` for the files that exist in LibreLane's layout below `final/`. Lint needs one of `vh`, `pnl` and `nl`, so a macro without any gets a comment that says so. `lib` and `spef` feed the chip's timing analysis, and a macro with neither may be black-boxed there.
+- **Views.** `macros.yaml` always names `gds` and `lef`, which LibreLane requires, and adds `vh`, `nl`, `pnl`, `lib` and `spef` for the files that exist in LibreLane's layout below `final/`. Lint needs one of `vh`, `pnl` and `nl`, so a macro without any gets a comment that says so. `lib` and `spef` feed the chip's timing analysis, and a macro with neither may be black-boxed there. LibreLane allows one definition per macro name, so the instances of a second run directory with the same name are left out and reported.
 
 ## Flylines and missing pads
 

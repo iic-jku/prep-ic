@@ -407,7 +407,7 @@ def macros_yaml(project, layout, out_dir=None, source=""):
     lower-left); paths are relative to ``out_dir`` (the directory of the config) when given
     and on the same drive, else absolute.
     """
-    from ..model.floorplan import core_area
+    from ..model.floorplan import core_area, macros_by_directory
     pdk = _require_pdk(layout)
     x0, y0, _, _ = core_area(layout)
 
@@ -423,13 +423,11 @@ def macros_yaml(project, layout, out_dir=None, source=""):
     out = _header("#", layout, pdk, source)
     out += ["# Macro placement for the LibreLane config.yaml (flow: Chip). The macros are",
             f"# instantiated inside the core ({CORE_INSTANCE} in chip_top.sv).", "", "MACROS:"]
-    groups = {}
-    for m in project.floorplan.macros:
-        if m.placeholder:
-            continue
-        groups.setdefault((m.macro, m.path), []).append(m)
-    for (name, path), ms in groups.items():
-        final = Path(path).resolve() / "final"
+    skipped = []
+    for name, dirs in macros_by_directory(project.floorplan.macros).items():
+        ms, *others = dirs.values()
+        skipped += [f"# {m.name} not exported: macro {name} already comes from another directory" for g in others for m in g]
+        final = Path(ms[0].path).resolve() / "final"
         out += [f"  {name}:", f"    gds: [{path_value(final / 'gds' / f'{name}.gds')}]",
                 f"    lef: [{path_value(final / 'lef' / f'{name}.lef')}]"]
         out += _macro_views(name, final, path_value)
@@ -442,6 +440,7 @@ def macros_yaml(project, layout, out_dir=None, source=""):
     for m in project.floorplan.macros:
         if m.placeholder:
             out.append(f"# placeholder {m.name} (no LEF) not exported")
+    out += skipped
     out.append("")
     return "\n".join(out)
 

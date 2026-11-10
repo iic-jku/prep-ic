@@ -260,6 +260,35 @@ class MacroExport(unittest.TestCase):
             self.assertNotIn(f"    {view}", text)
         self.assertNotIn("MODMISSING", text)  # lint takes the pnl
 
+    def two_paths(self, first, second):
+        from prep_ic.model.floorplan import Macro, MacroDef
+        p = compac_like()
+        p.floorplan.macros = [Macro(n, "m", path, 40.0, y, 0, [], MacroDef("m", 100.0, 100.0))
+                              for n, path, y in (("c0", first, 20.0), ("c1", second, 200.0))]
+        return p
+
+    def test_macros_yaml_one_directory_spelled_two_ways(self):
+        from prep_ic.formats.librelane import macros_yaml
+        with tempfile.TemporaryDirectory() as d:
+            p = self.two_paths(str(Path(d, "m")), f"{d}/x/../m/")
+            text = macros_yaml(p, p.layout(), out_dir=d)
+        self.assertEqual(text.count("  m:\n"), 1)
+        self.assertIn("      i_chip_core.c0:\n", text)
+        self.assertIn("      i_chip_core.c1:\n", text)
+        self.assertFalse(any("directories" in w for w in prep.findings(p)))
+
+    def test_macros_yaml_one_macro_name_from_two_directories(self):
+        from prep_ic.formats.librelane import macros_yaml
+        with tempfile.TemporaryDirectory() as d:
+            p = self.two_paths(str(Path(d, "v1", "m")), str(Path(d, "v2", "m")))
+            text = macros_yaml(p, p.layout(), out_dir=d)
+        self.assertEqual(text.count("  m:\n"), 1)  # a second key would stop LibreLane's loader
+        self.assertIn('dir::v1/m/final/gds/m.gds', text)
+        self.assertNotIn("v2/m", text)
+        self.assertNotIn("i_chip_core.c1:", text)
+        self.assertIn("# c1 not exported: macro m already comes from another directory", text)
+        self.assertIn("Macro m comes from 2 directories, not exported: c1", prep.findings(p))
+
     def test_macros_yaml_keeps_three_decimals(self):
         from prep_ic.formats.librelane import _num
         self.assertEqual((_num(1790.565), _num(160.0), _num(0.1 + 0.2)), ("1790.565", "160", "0.3"))

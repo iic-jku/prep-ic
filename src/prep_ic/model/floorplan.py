@@ -9,6 +9,7 @@ down, like the rest of the model.
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -246,7 +247,20 @@ def floorplan_warnings(project, layout=None) -> List[str]:
         w, h = m.size()
         if m.x < -eps or m.y < -eps or m.x + w > cw + eps or m.y + h > ch + eps:
             out.append(f"Macro {m.name} outside the core")
+    for name, dirs in macros_by_directory(macros).items():
+        if len(dirs) > 1:
+            rest = [m.name for ms in list(dirs.values())[1:] for m in ms]
+            out.append(f"Macro {name} comes from {len(dirs)} directories, not exported: {', '.join(rest)}")
     return out
+
+
+def macros_by_directory(macros):
+    """Macro name → run directory → placed instances. LibreLane allows one definition per name."""
+    groups = {}
+    for m in macros:
+        if not m.placeholder:
+            groups.setdefault(m.macro, {}).setdefault(os.path.normcase(os.path.abspath(m.path)), []).append(m)
+    return groups
 
 
 def utilization(project, layout=None) -> float:
