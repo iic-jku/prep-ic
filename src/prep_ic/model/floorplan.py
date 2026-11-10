@@ -134,7 +134,7 @@ class Floorplan:
         """Read the LEF of every macro again (once per directory); returns warnings.
 
         A macro whose LEF cannot be read keeps its last known values. Marked pins that are no
-        longer in the LEF stay marked but are skipped.
+        longer in the LEF or became power pins stay marked but are skipped.
         """
         warnings, read = [], {}
         for m in self.macros:
@@ -152,7 +152,10 @@ class Floorplan:
                 continue
             m.cache, m.macro = mdef, mdef.name
             names = {p.name for p in mdef.pins}
+            signals = {p.name for p in m.signal_pins()}
             warnings += [f"Pin {n} of {m.name} no longer in the LEF" for n in m.io if n not in names]
+            warnings += [f"Pin {n} of {m.name} is a power pin in the LEF, it gets no flyline"
+                         for n in m.io if n in names and n not in signals]
         return warnings
 
     def instance_name(self, macro: str) -> str:
