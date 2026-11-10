@@ -32,7 +32,7 @@ class Pdk:
     cell_depth: float
     corner: float              # corner cell size (square)
     edge_spacing: float        # die edge to IO cells (PAD_EDGE_SPACING, seal ring)
-    bondpad_w: float           # bondpad between seal ring and IO cell
+    bondpad_w: float           # default bond pad, a cell may name its own "bondpad"
     bondpad_h: float
     default_pitch: float
     core_margin: float         # IO ring to core area (core power ring)
@@ -40,6 +40,7 @@ class Pdk:
     split_filler: str          # filler master with the width of split_gap
     power_pins: Dict[str, str]
     cells: Dict[str, dict]
+    bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
 
     @property
     def ring_depth(self):
@@ -49,6 +50,11 @@ class Pdk:
     def width_of(self, function):
         """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
         return self.cells.get(function, {}).get("width", self.cell_width)
+
+    def bondpad_of(self, function):
+        """``(w, h, inset)`` of the bond pad of a function, ``inset`` as in ``bondpad_inset``."""
+        own = self.cells.get(function, {}).get("bondpad", {})
+        return own.get("w", self.bondpad_w), own.get("h", self.bondpad_h), own.get("inset", self.bondpad_inset)
 
     def drives(self, function):
         return list(self.cells.get(function, {}).get("drives", []))
@@ -100,7 +106,8 @@ def _pdks():
             cell_width=d["cell_width"], cell_depth=d["cell_depth"], corner=d["corner"],
             edge_spacing=d["edge_spacing"], bondpad_w=d["bondpad"]["w"], bondpad_h=d["bondpad"]["h"],
             default_pitch=d["default_pitch"], core_margin=d["core_margin"], split_gap=d["split_gap"],
-            split_filler=d["split_filler"], power_pins=d["power_pins"], cells=d["cells"])
+            split_filler=d["split_filler"], power_pins=d["power_pins"], cells=d["cells"],
+            bondpad_inset=d["bondpad"].get("inset"))
     return out
 
 
