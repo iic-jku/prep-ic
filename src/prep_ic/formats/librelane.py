@@ -412,7 +412,7 @@ def macros_yaml(project, layout, out_dir=None, source=""):
     lower-left); paths are relative to ``out_dir`` (the directory of the config) when given
     and on the same drive, else absolute.
     """
-    from ..model.floorplan import core_area, macros_by_directory
+    from ..model.floorplan import core_area, find_lef, macros_by_directory
     pdk = _require_pdk(layout)
     x0, y0, _, _ = core_area(layout)
 
@@ -433,8 +433,10 @@ def macros_yaml(project, layout, out_dir=None, source=""):
         ms, *others = dirs.values()
         skipped += [f"# {m.name} not exported: macro {name} already comes from another directory" for g in others for m in g]
         final = Path(ms[0].path).resolve() / "final"
-        out += [f"  {name}:", f"    gds: [{path_value(final / 'gds' / f'{name}.gds')}]",
-                f"    lef: [{path_value(final / 'lef' / f'{name}.lef')}]"]
+        lef = final / "lef" / f"{name}.lef"
+        if not lef.is_file() and find_lef(ms[0].path):  # the file the planner read may be named otherwise
+            lef = final / "lef" / find_lef(ms[0].path).name
+        out += [f"  {name}:", f"    gds: [{path_value(final / 'gds' / f'{name}.gds')}]", f"    lef: [{path_value(lef)}]"]
         out += _macro_views(name, final, path_value)
         out.append("    instances:")
         for m in ms:

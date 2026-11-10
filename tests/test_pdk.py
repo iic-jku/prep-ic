@@ -260,6 +260,12 @@ class MacroExport(unittest.TestCase):
             self.assertNotIn(f"    {view}", text)
         self.assertNotIn("MODMISSING", text)  # lint takes the pnl
 
+    def test_macros_yaml_names_the_lef_that_was_read(self):
+        self.assertIn('    lef: ["dir::m/final/lef/renamed.lef"]\n', self.run_dir_yaml(["lef/renamed.lef"]))
+        self.assertIn('    lef: ["dir::m/final/lef/m_top.lef"]\n', self.run_dir_yaml(["lef/m_top.lef", "lef/other.lef"]))
+        self.assertIn('    lef: ["dir::m/final/lef/m.lef"]\n', self.run_dir_yaml(["lef/m.lef", "lef/other.lef"]))
+        self.assertIn('    lef: ["dir::m/final/lef/m.lef"]\n', self.run_dir_yaml([]))  # none there, the path LibreLane expects
+
     def test_macros_yaml_hand_made_verilog_view(self):
         self.assertIn('    vh: ["dir::m/final/vh/m.v"]\n', self.run_dir_yaml(["vh/m.v"]))
         self.assertNotIn("MODMISSING", self.run_dir_yaml(["vh/m.v"]))

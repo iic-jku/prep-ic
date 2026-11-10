@@ -7,7 +7,6 @@ Planned work on PREP-IC. Each item names the files it touches. Remove an item in
 
 Each of these needs a choice or more than a small fix, so they wait for a later release.
 
-- [ ] **`lef:` in `macros.yaml` names `<macro>.lef`, not the file that was read (`formats/librelane.py`, `model/floorplan.py`).** `find_lef` accepts the only `*.lef` of `final/lef/`, so a LEF named otherwise than its macro exports a path that does not exist. None of the 64 directories has this.
 - [ ] **`findings()` keeps load warnings after a reload (`model/chip.py`).** A script that calls `project.floorplan.reload()` has to set `project.load_warnings` itself, as the GUI does, or stale `No LEF found` lines stay.
 - [ ] **"Qt is missing" hides the real import error (`gui/qt.py`).** A PySide6 that is installed but cannot load, for lack of `libEGL.so.1` for example, gets the advice to install it, and the cause is lost.
 
