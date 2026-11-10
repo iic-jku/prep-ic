@@ -342,7 +342,7 @@ class Sky130A(unittest.TestCase):
         pdk = pdk_model.get_pdk("sky130A")
         self.assertEqual((pdk.bondpad_shift("out"), pdk.bondpad_shift("vdd")), (-2.5, 0.03))
         clk = lay.pins[0]  # left side, the row runs along y
-        self.assertEqual(clk.y % 1, 0.5 if (clk.y + 2.5 - 40) % 1 == 0.5 else clk.y % 1)
+        self.assertEqual((clk.y + 2.5 - 40) % 1, 0)  # the cell stays on the 1 um site grid
 
     def test_the_connect_slices_are_added(self):
         lay = self.project().layout()

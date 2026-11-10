@@ -20,7 +20,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 
 ### sky130A (`data/pdks/sky130a.json`)
 
-- [ ] Example project (`examples/sky130a_*.json`), an entry in `tests/data/layout_baseline.json`, and export tests next to the IHP ones in `tests/test_pdk.py`.
 
 ### gf180mcuD (`data/pdks/gf180mcud.json`)
 
