@@ -153,6 +153,30 @@ class PowerDomains(unittest.TestCase):
         self.assertTrue(any(w.startswith("Only one power split") for w in p.layout().warnings))
 
 
+class SplitPerPdk(unittest.TestCase):
+    def test_a_pdk_without_a_split_mechanism_refuses_splits(self):
+        with with_profile(split_gap=None, split_filler=None):
+            lay = compac_like(split=True).layout()
+            self.assertEqual((lay.splits, lay.domains), ([], [""]))
+            self.assertIn("Power split ANA, MAIN ignored: IHP SG13G2 has no split mechanism in its profile", lay.warnings)
+            tcl = pad_cfg_tcl(lay)
+            self.assertNotIn("findMaster", tcl)
+            self.assertNotIn("None", tcl)
+            self.assertIn("connect_by_abutment", tcl)
+
+    def test_refused_split_keeps_the_editor_gutter_aligned(self):
+        with with_profile(split_gap=None, split_filler=None):
+            lay = compac_like(split=True).layout()
+        self.assertEqual(len(lay.gutter["R"]), 8)
+
+    def test_the_ihp_profiles_keep_their_split(self):
+        for name in ("ihp-sg13g2", "ihp-sg13cmos5l"):
+            pdk = pdk_model.get_pdk(name)
+            self.assertEqual(pdk.split_gap, 10.0)
+            self.assertTrue(pdk.split_filler.endswith("_Filler2000"))
+        self.assertIn("findMaster", pad_cfg_tcl(compac_like(split=True).layout()))
+
+
 class Packaging(unittest.TestCase):
     def test_qfn_one_to_one(self):
         p = compac_like(package="OP_QFN32_A4_FIT")
