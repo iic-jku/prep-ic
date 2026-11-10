@@ -278,6 +278,21 @@ def _rails(layout):
     return [layout.rail(f, d) for d in layout.domains for f in ("iovdd", "iovss", "vdd", "vss")]
 
 
+def _tied_pins(cell, inst):
+    """Connections and wires of the pins a profile ties: a constant, ``None`` for open, ``@PIN`` for a net of this instance."""
+    conns, wires = [], []
+    for pin, value in cell.get("ties", {}).items():
+        if value is None:
+            conns.append(f".{pin}()")
+        elif value.startswith("@"):
+            net = f"{inst}_{value[1:]}"
+            wires += [] if net in wires else [net]
+            conns.append(f".{pin}({net})")
+        else:
+            conns.append(f".{pin}({value})")
+    return conns, wires
+
+
 def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
     pdk = _require_pdk(layout)
     names = PadNames(layout)
@@ -315,6 +330,9 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
             for role, pin in pins.items():
                 net = f"{base}_PAD{idx}" if role == "pad" else f"{base}_{NET_SUFFIX[role]}{idx}"
                 conns.append(f".{pin}({net})")
+        tie_conns, tie_wires = _tied_pins(pdk.cells[p.function], names.inst[p.no])
+        conns += tie_conns
+        out += [f"    wire {w};" for w in tie_wires]
         dom = f", domain {p.domain}" if p.domain else ""
         out += [f"    // pin {p.no}: {p.name} ({SIDE_NAMES[p.side].lower()}{dom})",
                 "    (* keep *)", f"    {master} {names.inst[p.no]} ("]
