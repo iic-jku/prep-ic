@@ -368,6 +368,25 @@ class Sky130A(unittest.TestCase):
         self.assertEqual(p.layout().splits, [])
 
 
+class WaferSpaceSlots(unittest.TestCase):
+    SLOTS = {"0p5x0p5": (1936, 2531, 56), "0p5x1": (1936, 5122, 72), "1x0p5": (3932, 2531, 72), "1x1": (3932, 5122, 74)}
+
+    def test_every_slot(self):
+        for slot, (w, h, pads) in self.SLOTS.items():
+            with self.subTest(slot):
+                p = prep.load(ROOT / "examples" / f"wafer_space_slot_{slot}.json")
+                lay = p.layout()
+                self.assertEqual((lay.die_width, lay.die_height, len(lay.pins), lay.fixed_die), (w, h, pads, True))
+                self.assertEqual((p.settings.pdk, lay.warnings, p.load_warnings), ("gf180mcuD", [], []))
+
+    def test_supply_pads_are_locked_and_signals_are_not(self):
+        p = prep.load(ROOT / "examples" / "wafer_space_slot_1x1.json")
+        lines = [line for side in "TRBL" for line in p.sides[side]]
+        supply = [line for line in lines if "vdd]" in line or "vss]" in line]
+        self.assertTrue(supply and all("[lock]" in line for line in supply))
+        self.assertFalse(any("[lock]" in line for line in lines if line not in supply))
+
+
 class Packaging(unittest.TestCase):
     def test_qfn_one_to_one(self):
         p = compac_like(package="OP_QFN32_A4_FIT")

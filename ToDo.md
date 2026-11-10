@@ -23,7 +23,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 
 ### gf180mcuD (`data/pdks/gf180mcud.json`)
 
-- [ ] **wafer.space slots.** A chip for a wafer.space gf180mcu run goes into one of four fixed slots, each with a fixed die, pad count and pad order (`flow/librelane/slots/slot_*.yaml` in the template, e.g. `DIE_AREA: [0, 0, 3932, 5122]` for `slot_1x1`). A slot preset (fixed die, locked supply pads, open signal slots) lets the planner assign the signals to a slot instead of growing the die.
 
 ### After both
 
