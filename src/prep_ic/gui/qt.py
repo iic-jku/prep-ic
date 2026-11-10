@@ -15,7 +15,7 @@ try:
                                    QPushButton, QSplitter, QTableWidget, QTableWidgetItem,
                                    QTabWidget, QTextEdit, QToolButton, QVBoxLayout, QWidget)
     QT_API = "PySide6"
-except ImportError:  # pragma: no cover
+except ImportError as pyside_error:  # pragma: no cover
     try:
         from PyQt6.QtCore import QEvent, QLocale, QPointF, QRect, QRectF, QSize, Qt, QTimer
         from PyQt6.QtGui import (QAction, QActionGroup, QBrush, QColor, QFont, QFontDatabase, QIcon, QImage,
@@ -31,4 +31,6 @@ except ImportError:  # pragma: no cover
                                      QTabWidget, QTextEdit, QToolButton, QVBoxLayout, QWidget)
         QT_API = "PyQt6"
     except ImportError:
-        raise ImportError("Qt is missing. Install it with:  pip install PySide6-Essentials") from None
+        if isinstance(pyside_error, ModuleNotFoundError) and str(pyside_error.name).split(".")[0] == "PySide6":
+            raise ImportError("Qt is missing. Install it with:  pip install PySide6-Essentials") from None
+        raise ImportError(f"PySide6 cannot be loaded: {pyside_error}") from None  # installed, a library it needs is not

@@ -3,13 +3,6 @@
 Planned work on PREP-IC. Each item names the files it touches. Remove an item in the commit that finishes it.
 
 
-## Found in the review of 0.1.2
-
-Each of these needs a choice or more than a small fix, so they wait for a later release.
-
-- [ ] **"Qt is missing" hides the real import error (`gui/qt.py`).** A PySide6 that is installed but cannot load, for lack of `libEGL.so.1` for example, gets the advice to install it, and the cause is lost.
-
-
 ## Other repos
 
 - [ ] **snp2le has the same PySide6 dependency (`pyproject.toml`).** It declares `PySide6-Essentials>=6.6` and Python 3.10 with no limit for Linux. Four of its GUI test files (25 tests) pass on Linux with Python 3.10 and PySide6 6.12.0, and it calls neither of the two `QFont` setters measured here, but other calls and a long session were not measured.
