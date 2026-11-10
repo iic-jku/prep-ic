@@ -11,7 +11,8 @@
   "bondpad": {
     "w": 62.6,
     "h": 62.45,
-    "inset": 32.99
+    "inset": 32.99,
+    "shift": -2.5
   },
   "default_pitch": 100.0,
   "core_margin": 100.0,
@@ -225,7 +226,8 @@
       "bondpad": {
         "w": 60.84,
         "h": 60.825,
-        "inset": 34.055
+        "inset": 34.055,
+        "shift": 0.03
       },
       "ties": {
         "AMUXBUS_A": null,
@@ -239,7 +241,8 @@
       "bondpad": {
         "w": 54.4,
         "h": 67.265,
-        "inset": 30.835
+        "inset": 30.835,
+        "shift": 0.03
       },
       "power_pins": {
         "vdd": [
@@ -274,7 +277,8 @@
       "bondpad": {
         "w": 54.4,
         "h": 67.265,
-        "inset": 30.835
+        "inset": 30.835,
+        "shift": 0.03
       },
       "power_pins": {
         "vdd": [
@@ -309,7 +313,8 @@
       "bondpad": {
         "w": 60.84,
         "h": 60.825,
-        "inset": 34.055
+        "inset": 34.055,
+        "shift": 0.03
       },
       "power_pins": {
         "vdd": [
@@ -344,7 +349,8 @@
       "bondpad": {
         "w": 60.84,
         "h": 60.825,
-        "inset": 34.055
+        "inset": 34.055,
+        "shift": 0.03
       },
       "power_pins": {
         "vdd": [
