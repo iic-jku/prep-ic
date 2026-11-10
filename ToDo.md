@@ -7,7 +7,6 @@ Planned work on PREP-IC. Each item names the files it touches. Remove an item in
 
 Each of these needs a choice or more than a small fix, so they wait for a later release.
 
-- [ ] **One macro name from two paths in `macros.yaml` (`formats/librelane.py`, `macros_yaml`).** Instances group by name and path while `MACROS` is keyed by name, so two run directories of one module, or one directory spelled two ways in a hand-edited file, write a duplicate key that LibreLane's loader rejects. Group by resolved path and report a real conflict.
 - [ ] **Hand-made `final/` layouts in `macros.yaml` (`formats/librelane.py`, `_macro_views`).** Only LibreLane's layout is read. Of 64 macro directories in the group's chip repos, 30 have a flat `final/lib/<name>.lib`, which names no corner for a key, and 6 have `final/vh/<name>.v`. The chip templates list such a lib by hand as `lib: {"*": [...]}` for some macros and leave it out for others. Decide whether to export them or to name them in a comment.
 - [ ] **`lef:` in `macros.yaml` names `<macro>.lef`, not the file that was read (`formats/librelane.py`, `model/floorplan.py`).** `find_lef` accepts the only `*.lef` of `final/lef/`, so a LEF named otherwise than its macro exports a path that does not exist. None of the 64 directories has this.
 - [ ] **`findings()` keeps load warnings after a reload (`model/chip.py`).** A script that calls `project.floorplan.reload()` has to set `project.load_warnings` itself, as the GUI does, or stale `No LEF found` lines stay.
