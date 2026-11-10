@@ -260,6 +260,19 @@ class MacroExport(unittest.TestCase):
             self.assertNotIn(f"    {view}", text)
         self.assertNotIn("MODMISSING", text)  # lint takes the pnl
 
+    def test_macros_yaml_hand_made_verilog_view(self):
+        self.assertIn('    vh: ["dir::m/final/vh/m.v"]\n', self.run_dir_yaml(["vh/m.v"]))
+        self.assertNotIn("MODMISSING", self.run_dir_yaml(["vh/m.v"]))
+        text = self.run_dir_yaml(["vh/m.v", "vh/m.vh"])  # LibreLane's own name wins
+        self.assertIn('    vh: ["dir::m/final/vh/m.vh"]\n', text)
+        self.assertNotIn("m/final/vh/m.v\"", text)
+
+    def test_macros_yaml_names_a_flat_lib_without_exporting_it(self):
+        text = self.run_dir_yaml(["vh/m.vh", "lib/m.lib"])
+        self.assertIn('    # final/lib/m.lib not exported, it names no corner. If it holds for all of them: lib: {"*": [...]}\n', text)
+        self.assertNotIn("    lib:", text)
+        self.assertNotIn("not exported, it names", self.run_dir_yaml(["vh/m.vh"]))
+
     def two_paths(self, first, second):
         from prep_ic.model.floorplan import Macro, MacroDef
         p = compac_like()
