@@ -166,13 +166,26 @@ class Floorplan:
 
     @classmethod
     def from_dict(cls, d):
-        macros = []
-        for m in (d.get("macros", []) if isinstance(d, dict) else []):
-            try:
-                macros.append(Macro.from_dict(m))
-            except (KeyError, TypeError, AttributeError, ValueError):
-                pass  # not a macro entry
-        return cls(macros)
+        return cls(_read_macros(d)[0])
+
+
+def _read_macros(d):
+    """The macros of a floorplan dict, and a warning for each part of it that had to be dropped."""
+    if d is not None and not isinstance(d, dict):
+        return [], ["The floorplan could not be read, its macros were dropped"]
+    macros, warnings = [], []
+    for i, m in enumerate((d or {}).get("macros", []), 1):
+        try:
+            macros.append(Macro.from_dict(m))
+        except (KeyError, TypeError, AttributeError, ValueError):
+            name = m.get("name") if isinstance(m, dict) else None
+            warnings.append(f"Macro entry {i}" + (f" ({name})" if name else "") + " could not be read and was dropped")
+    return macros, warnings
+
+
+def dropped_entries(d) -> List[str]:
+    """Warnings for what :meth:`Floorplan.from_dict` leaves out of ``d``."""
+    return _read_macros(d)[1]
 
 
 def find_lef(path) -> Optional[Path]:

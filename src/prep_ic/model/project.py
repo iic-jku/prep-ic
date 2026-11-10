@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 from .constants import EXAMPLE, ORDER, REV, SIDES
-from .floorplan import Floorplan
+from .floorplan import Floorplan, dropped_entries
 from .parse import num, split_lines
 
 
@@ -187,6 +187,12 @@ class Project:
 
 def default_state():
     return Project().to_dict()
+
+
+def load_problems(data) -> List[str]:
+    """Warnings for what :meth:`Project.from_dict` leaves out of ``data`` without an error."""
+    unknown = [f'Unknown side "{s}" ignored, expected T, R, B or L' for s in data["sides"] if s not in SIDES]
+    return unknown + dropped_entries(data.get("floorplan"))
 
 
 def normalize_state(st):
