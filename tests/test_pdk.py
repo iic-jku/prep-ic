@@ -238,6 +238,26 @@ class LibreLaneOutput(unittest.TestCase):
         self.assertIn(".OE_N(~bidir_c2p_en[0])", sv)
         self.assertIn("output logic [3:0] bidir_oe", core)  # the core port stays active high
 
+    def test_rail_names_per_pdk(self):
+        rails = {"vdd": "VDD", "vss": "VSS", "iovdd": "DVDD", "iovss": "DVSS"}
+        with with_profile(rails=rails):
+            lay = compac_like(package="OP_QFN32_A4_FIT").layout()
+            sv = chip_top_sv(lay)
+            self.assertIn("inout wire DVDD", sv)
+            self.assertIn(".iovdd(DVDD)", sv)
+            self.assertNotIn(".iovdd(IOVDD)", sv)
+            self.assertRegex(bondplan_yaml(lay), r'\n  4:\s+"DVDD"')
+            p = compac_like()
+            p.sides["R"] = ["ain[0] [analog]"]
+            p.sides["L"] = ["clk [in]", "VDD", "VSS"]
+            self.assertIn("The IO ring has no DVDD/DVSS pad", p.layout().warnings)
+
+    def test_two_functions_on_one_master(self):
+        with with_cell("vdd", master="sg13g2_IOPadIOVdd"):
+            lay = compac_like().layout()
+        self.assertEqual({q.cell for q in lay.pins if q.function in ("vdd", "iovdd")}, {"sg13g2_IOPadIOVdd"})
+        self.assertEqual(lay.warnings, [])
+
     def test_chip_top_ports(self):
         sv = chip_top_sv(compac_like(split=True).layout())
         for decl in ("inout wire [8:0] out_PAD", "inout wire [1:0] ain_PAD", "inout wire VDD_ANA",

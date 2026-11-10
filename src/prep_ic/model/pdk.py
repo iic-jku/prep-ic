@@ -10,10 +10,12 @@ describes the leads per side in pin number order.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+
+from .constants import RAILS
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 
@@ -40,6 +42,7 @@ class Pdk:
     split_filler: str          # filler master with the width of split_gap
     power_pins: Dict[str, object]  # rail kind to a pin or a list of pins, a cell may name its own "power_pins"
     cells: Dict[str, dict]
+    rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
     bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
 
     @property
@@ -112,7 +115,7 @@ def _pdks():
             edge_spacing=d["edge_spacing"], bondpad_w=d["bondpad"]["w"], bondpad_h=d["bondpad"]["h"],
             default_pitch=d["default_pitch"], core_margin=d["core_margin"], split_gap=d["split_gap"],
             split_filler=d["split_filler"], power_pins=d["power_pins"], cells=d["cells"],
-            bondpad_inset=d["bondpad"].get("inset"))
+            bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
     return out
 
 
