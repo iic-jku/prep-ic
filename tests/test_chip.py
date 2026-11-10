@@ -80,7 +80,8 @@ class AnalyseTests(unittest.TestCase):
 
     def test_unknown_tags_and_options(self):
         for line in ("A [foo]", "A [in] [foo]", "D [foo-bar]", "A [in", "A]", "A[3] [foo]", "A[]", "A[x]", "A[１]",
-                     "A {60x}", "A {60x", "A 60x60}", "{60x60}", "A @x", "@120"):
+                     "A {60x}", "A {60x", "A 60x60}", "{60x60}", "A @x", "@120",
+                     "A {0x0}", "A {0x10}", "A @0", "A [0mA]"):  # numbers that cannot be meant
             self.assertIn(f"Unknown tag or option in pad name: {line}",
                           analyse(set_lines(chip(), "L", [line])).warnings)
 

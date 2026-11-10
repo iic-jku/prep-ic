@@ -21,6 +21,7 @@ Options combine, e.g. ``RFOUT [gsg] {70x70} @125`` or ``DOUT [out] [4mA]``.
 RF pads and all pads in GSG groups use the RF settings (pitch, pad size).
 """
 
+import math
 import re
 
 from .constants import FUNCTION_TAGS, GROUPS, SPLIT_PREFIX, TAGS
@@ -30,7 +31,7 @@ def num(v, default, minimum=1.0):
     """Parse a number (comma or point as decimal separator); fall back to ``default``."""
     try:
         f = float(str(v).replace(",", "."))
-        return f if f >= minimum else default
+        return f if math.isfinite(f) and f >= minimum else default
     except (TypeError, ValueError):
         return default
 
@@ -77,12 +78,12 @@ def parse_line(line):
     lock = False
     while True:
         m = SIZE_RE.search(t)
-        if m and m.start() > 0:
+        if m and m.start() > 0 and num(m.group(1), 0) and num(m.group(2), 0):  # else it stays in the name, a finding
             size = (num(m.group(1), 1), num(m.group(2), 1))
             t = t[:m.start()]
             continue
         m = PITCH_RE.search(t)
-        if m and m.start() > 0:
+        if m and m.start() > 0 and num(m.group(1), 0):
             pitch = num(m.group(1), 1)
             t = t[:m.start()]
             continue
@@ -97,7 +98,7 @@ def parse_line(line):
                 function = FUNCTION_TAGS[k]
             elif k == "lock":
                 lock = True
-            elif DRIVE_RE.fullmatch(k):
+            elif DRIVE_RE.fullmatch(k) and int(DRIVE_RE.fullmatch(k).group(1)):
                 drive = int(DRIVE_RE.fullmatch(k).group(1))
             else:
                 break  # e.g. bus name D[3] stays part of the name

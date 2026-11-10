@@ -163,7 +163,7 @@ class CommandLine(unittest.TestCase):
     def test_export_malformed_project_is_a_clean_error(self):
         with tempfile.TemporaryDirectory() as d:
             for name, text in (("attribute.json", '{"sides": 3}'), ("type.json", '{"sides": {}, "std": 3}'),
-                               ("overflow.json", '{"sides": {}, "pitch": 1e999}'), ("nesting.json", "[" * 200000)):
+                               ("nesting.json", "[" * 200000)):
                 path = Path(d, name)
                 path.write_text(text, encoding="utf-8")
                 self.assertRaises(ValueError, prep.load, path)
@@ -220,9 +220,31 @@ class LoadProblems(unittest.TestCase):
         self.assertEqual(p.load_warnings, ['Unknown side "l" ignored, expected T, R, B or L'])
         self.assertEqual(p.sides["L"], ["B"])
 
+    def test_invalid_numbers_are_findings_and_use_the_default(self):
+        p = self.warnings({"sides": {"L": "A"}, "std": {"pitch": 1e999}, "cellh": "tall", "halo": 0})
+        self.assertEqual(p.load_warnings, ["Setting cellh is no valid number ('tall'), using the default",
+                                           "Setting std.pitch is no valid number (inf), using the default"])
+        self.assertEqual((p.settings.std.pitch, p.settings.cell_height, p.settings.halo), (80.0, 120.0, 0.0))
+        p = self.warnings({"sides": {"L": "A"}, "pitch": 1e999})  # the flat key of old files
+        self.assertEqual(p.load_warnings, ["Setting pitch is no valid number (inf), using the default"])
+        self.assertEqual(p.settings.std.pitch, 80.0)
+
+    def test_an_infinite_pitch_no_longer_stops_the_export(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "chip.json")
+            path.write_text('{"sides": {"L": "A"}, "pdk": "ihp-sg13g2", "std": {"pitch": 1e999}}', encoding="utf-8")
+            prep.export_librelane(prep.load(path), d)  # raised OverflowError
+            self.assertTrue(Path(d, "chip_top.sv").exists())
+
+    def test_macro_position_that_is_no_finite_number_is_zero(self):
+        macro = {**self.MACRO, "x": 1e999, "y": float("nan"), "rot": 1e999}
+        m = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [macro]}}).floorplan.macros[0]
+        self.assertEqual((m.x, m.y, m.rot), (0.0, 0.0, 0))
+
     def test_clean_files_have_no_load_problems(self):
         for data in ({"sides": {"L": "A"}}, {"sides": {"L": "A"}, "floorplan": None}, {"sides": {}, "floorplan": {}},
-                     {"sides": {"L": "A"}, "floorplan": {"macros": [self.MACRO]}}):
+                     {"sides": {"L": "A"}, "floorplan": {"macros": [self.MACRO]}},
+                     prep.Project.example().to_dict()):  # every setting a saved file carries
             self.assertEqual(self.warnings(data).load_warnings, [], data)
 
 

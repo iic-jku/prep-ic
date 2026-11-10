@@ -196,7 +196,7 @@ One line per entry. Each side lists its pads as seen on the die: top and bottom 
 | `NAME [lock]` | locked pad: it can no longer be dragged and *Optimize Pad Order* leaves it in place |
 | `=== NAME` | power split: cuts the IO ring here and starts power domain `NAME` |
 
-Options combine: `RFOUT [gsg] {70x70} @125`, `DOUT[3] [out] [4mA]`. An unknown tag or a malformed option stays in the pad name together with the options left of it, so `A [in] [foo]` is a pad named `A [in] [foo]` and `A {60x}` a pad named `A {60x}`. The warning line and `prep-ic check` report it.
+Options combine: `RFOUT [gsg] {70x70} @125`, `DOUT[3] [out] [4mA]`. An unknown tag or a malformed option stays in the pad name together with the options left of it, so `A [in] [foo]` is a pad named `A [in] [foo]` and `A {60x}` a pad named `A {60x}`. A size or pitch below 1 µm and `[0mA]` count as malformed. The warning line and `prep-ic check` report it.
 
 ### PDK, package and LibreLane
 
