@@ -8,6 +8,7 @@ down, like the rest of the model.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -38,9 +39,10 @@ MACRO_CLASSES = ("normal", "sensitive", "noisy")
 
 def _f(v, default=0.0):
     try:
-        return float(v)
-    except (TypeError, ValueError):
+        f = float(v)
+    except (OverflowError, TypeError, ValueError):
         return default
+    return f if math.isfinite(f) else default
 
 
 @dataclass

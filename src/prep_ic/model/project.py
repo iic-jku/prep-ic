@@ -12,6 +12,10 @@ from .constants import EXAMPLE, ORDER, REV, SIDES
 from .floorplan import Floorplan, dropped_entries
 from .parse import num, split_lines
 
+# key in a project file and its smallest valid value, as Project.from_dict reads them
+NUMBER_SETTINGS = (("cellh", 1.0), ("die_w", 1.0), ("die_h", 1.0), ("core_w", 1.0), ("core_h", 1.0), ("grid", 0.001),
+                   ("halo", 0.0), ("spacing", 0.0), ("max_flyline", 1.0), ("max_supply_dist", 1.0))
+
 
 @dataclass
 class PadSettings:
@@ -189,10 +193,21 @@ def default_state():
     return Project().to_dict()
 
 
+def _bad_numbers(data) -> List[str]:
+    """Settings that :meth:`Project.from_dict` replaced by their default."""
+    checks = [(k, data[k], minimum) for k, minimum in NUMBER_SETTINGS if k in data]
+    for group in ("std", "rf"):
+        checks += [(f"{group}.{k}", data[group][k], 1.0) for k in ("pitch", "w", "h") if k in data.get(group, {})]
+    if "pitch" in data and "std" not in data:  # the flat key of old files
+        checks.append(("pitch", data["pitch"], 1.0))
+    return [f"Setting {k} is no valid number ({v!r}), using the default"
+            for k, v, minimum in checks if num(v, None, minimum) is None]
+
+
 def load_problems(data) -> List[str]:
     """Warnings for what :meth:`Project.from_dict` leaves out of ``data`` without an error."""
     unknown = [f'Unknown side "{s}" ignored, expected T, R, B or L' for s in data["sides"] if s not in SIDES]
-    return unknown + dropped_entries(data.get("floorplan"))
+    return unknown + dropped_entries(data.get("floorplan")) + _bad_numbers(data)
 
 
 def normalize_state(st):
