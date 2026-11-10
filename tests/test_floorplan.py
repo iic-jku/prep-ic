@@ -207,6 +207,16 @@ class ReloadTests(unittest.TestCase):
         self.assertEqual(fp.macros[0].io, ["VIN_P", "VIN_N"])
         self.assertEqual([p.name for p in fp.macros[0].io_pins()], ["VIN_P"])
 
+    def test_reload_macros_keeps_the_findings_current(self):
+        p = prep.Project(sides={"L": ["A"], "T": [], "R": [], "B": []})
+        p.floorplan.macros = [Macro.from_dir(str(self.dir), "a0")]
+        p.load_warnings = ["No LEF found for a0, stale"]
+        self.assertEqual(p.reload_macros(), [])
+        self.assertFalse(any("No LEF" in f for f in prep.findings(p)))
+        self.lef.unlink()
+        self.assertEqual(p.reload_macros(), [f"No LEF found for a0 ({self.dir}), using last known values"])
+        self.assertIn(f"No LEF found for a0 ({self.dir}), using last known values", prep.findings(p))
+
     def test_reload_missing_dir_keeps_cache(self):
         m = Macro.from_dir(str(self.dir), "a0")
         shutil.rmtree(self.dir)
