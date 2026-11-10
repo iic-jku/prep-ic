@@ -229,6 +229,15 @@ class LibreLaneOutput(unittest.TestCase):
         with with_cell("inout", ties={"CS": "1'b0"}):
             self.assertEqual(chip_core_template_sv(compac_like().layout()), base)
 
+    def test_active_low_output_enable(self):
+        pins = {"pad": "PAD", "in": "IN", "out": "OUT", "oe": "OE_N"}
+        with with_cell("inout", pins=pins, active_low=["oe"]):
+            lay = compac_like().layout()
+            sv = chip_top_sv(lay)
+            core = chip_core_template_sv(lay)
+        self.assertIn(".OE_N(~bidir_c2p_en[0])", sv)
+        self.assertIn("output logic [3:0] bidir_oe", core)  # the core port stays active high
+
     def test_chip_top_ports(self):
         sv = chip_top_sv(compac_like(split=True).layout())
         for decl in ("inout wire [8:0] out_PAD", "inout wire [1:0] ain_PAD", "inout wire VDD_ANA",

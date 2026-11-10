@@ -329,7 +329,8 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
             idx = f"[{index}]" if index is not None else ""
             for role, pin in pins.items():
                 net = f"{base}_PAD{idx}" if role == "pad" else f"{base}_{NET_SUFFIX[role]}{idx}"
-                conns.append(f".{pin}({net})")
+                invert = "~" if role in pdk.cells[p.function].get("active_low", ()) else ""
+                conns.append(f".{pin}({invert}{net})")
         tie_conns, tie_wires = _tied_pins(pdk.cells[p.function], names.inst[p.no])
         conns += tie_conns
         out += [f"    wire {w};" for w in tie_wires]
