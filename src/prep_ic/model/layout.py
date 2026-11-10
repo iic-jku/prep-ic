@@ -86,6 +86,7 @@ class Layout:
     domains: List[str] = field(default_factory=list)   # power domains in numbering order
     splits: List[Split] = field(default_factory=list)
     unbonded_leads: List[int] = field(default_factory=list)
+    rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
 
     @property
     def area_mm2(self):
@@ -96,7 +97,7 @@ class Layout:
 
     def rail(self, function, domain):
         """Net name of a power rail (``vdd``…) in a domain."""
-        return RAILS[function] + (f"_{domain}" if domain else "")
+        return self.rails[function] + (f"_{domain}" if domain else "")
 
 
 def _snap(v, grid):
@@ -424,7 +425,7 @@ def build_layout(project, selected=None):
             warnings.append(f"Pitch smaller than the IO cell ({width:g} µm) at pin " + ", ".join(nos))
         for dom in domains:
             have = {p["function"] for p in pins if p["domain"] == dom}
-            missing = [RAILS[f] for f in POWER_FUNCTIONS if f not in have]
+            missing = [pdk.rails[f] for f in POWER_FUNCTIONS if f not in have]
             if missing:
                 where = f"Power domain {dom}" if dom else "The IO ring"
                 warnings.append(f"{where} has no {'/'.join(missing)} pad")
@@ -483,4 +484,5 @@ def build_layout(project, selected=None):
                   core_limited=cfg.fixed_core and not cfg.fixed_die,
                   core_margin=pdk.core_margin if pdk else 0.0,
                   ring_depth=H, pdk=pdk.name if pdk else "", package=pkg.name if pkg else "",
-                  domains=domains, splits=splits, unbonded_leads=unbonded)
+                  domains=domains, splits=splits, unbonded_leads=unbonded,
+                  rails=dict(pdk.rails) if pdk else dict(RAILS))
