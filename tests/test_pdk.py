@@ -52,6 +52,12 @@ class Syntax(unittest.TestCase):
         self.assertEqual(parse_line("=== ANA"), {"split": True, "domain": "ANA"})
         self.assertEqual(parse_line("---")["name"], "---")  # old NC notation still a pad
 
+    def test_variant_tags(self):
+        self.assertEqual(parse_line("CK [in] [schmitt]")["variant"], "schmitt")
+        self.assertEqual(parse_line("RF [analog] [noesd]")["variant"], "noesd")
+        self.assertIsNone(parse_line("A")["variant"])
+        self.assertEqual(format_entry(parse_line("CK [in] [schmitt]")), "CK [in] [schmitt]")
+
     def test_format_round_trip(self):
         for line in ("DOUT [out] [16mA]", "RF [gsg] [analog] {60x60} @110", "X [d] [io]", "=== ANA"):
             self.assertEqual(format_entry(parse_line(line)), line)
@@ -125,6 +131,22 @@ class PdkGeometry(unittest.TestCase):
         lay = compac_like().layout()
         self.assertEqual(next(p for p in lay.pins if p.name == "out[0]").y, 105)
         self.assertIn("place_bondpad", pad_cfg_tcl(lay))
+
+    def test_cell_variant_selects_the_master(self):
+        with with_cell("in", variants={"schmitt": {"master": "my_schmitt"}}):
+            p = compac_like()
+            p.sides["L"][0] = "clk [in] [schmitt]"
+            lay = p.layout()
+            self.assertEqual(lay.pins[0].cell, "my_schmitt")
+            self.assertEqual(lay.warnings, [])
+            self.assertIn("my_schmitt pad_clk", chip_top_sv(lay))
+
+    def test_variant_the_pdk_does_not_have_is_a_warning(self):
+        p = compac_like()
+        p.sides["L"][0] = "clk [in] [schmitt]"
+        lay = p.layout()
+        self.assertEqual(lay.pins[0].cell, "sg13g2_IOPadIn")
+        self.assertIn("Variant schmitt ignored for pin 1 clk (in)", lay.warnings)
 
     def test_missing_supply(self):
         p = compac_like()
@@ -205,6 +227,11 @@ class Gf180mcuD(unittest.TestCase):
                      ".ASIG5V(ain_PAD)", ".DVDD(VDD)", ".DVSS(VSS)", ".VDD(VDD)"):
             self.assertIn(conn, sv)
         self.assertEqual(sv.count("inout wire VDD"), 1)  # one port although two rail kinds share the net
+
+    def test_schmitt_input(self):
+        p = self.project()
+        p.sides["L"][0] = "clk [in] [schmitt]"
+        self.assertEqual(p.layout().pins[0].cell, "gf180mcu_fd_io__in_s")
 
     def test_splits_are_refused(self):
         p = self.project()

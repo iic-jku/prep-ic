@@ -67,16 +67,16 @@ class Pdk:
     def drives(self, function):
         return list(self.cells.get(function, {}).get("drives", []))
 
-    def cell(self, function, drive=None) -> Optional[Tuple[str, Dict[str, str]]]:
+    def cell(self, function, drive=None, variant=None) -> Optional[Tuple[str, Dict[str, str]]]:
         """``(master, pins)`` of the IO cell for a function, or ``None`` (no cell).
 
         ``pins`` maps roles (pad, in, out, oe, analog) to the pin names of the master.
-        An unknown drive falls back to the default drive.
+        An unknown drive falls back to the default drive, an unknown variant to the plain cell.
         """
         c = self.cells.get(function)
         if c is None:
             return None
-        master = c["master"]
+        master = c.get("variants", {}).get(variant, {}).get("master", c["master"])
         if "{drive}" in master:
             if drive not in c["drives"]:
                 drive = c["default_drive"]

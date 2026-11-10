@@ -26,9 +26,10 @@ def read_macros(path):
 
 def masters(cell):
     """Every IO cell master a profile entry can select."""
+    variants = [v["master"] for v in cell.get("variants", {}).values()]
     if "{drive}" in cell["master"]:
-        return [cell["master"].format(drive=d) for d in cell["drives"]]
-    return [cell["master"]]
+        return [cell["master"].format(drive=d) for d in cell["drives"]] + variants
+    return [cell["master"]] + variants
 
 
 @unittest.skipUnless(os.environ.get("PDK_ROOT"), "needs PDK_ROOT")

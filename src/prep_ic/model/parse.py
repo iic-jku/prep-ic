@@ -24,7 +24,7 @@ RF pads and all pads in GSG groups use the RF settings (pitch, pad size).
 import math
 import re
 
-from .constants import FUNCTION_TAGS, GROUPS, SPLIT_PREFIX, TAGS
+from .constants import FUNCTION_TAGS, GROUPS, SPLIT_PREFIX, TAGS, VARIANT_TAGS
 
 
 def num(v, default, minimum=1.0):
@@ -74,7 +74,7 @@ def parse_line(line):
         return None
     if t.startswith(SPLIT_PREFIX):
         return {"split": True, "domain": t.strip("= \t")}
-    typ = size = pitch = group = function = drive = None
+    typ = size = pitch = group = function = drive = variant = None
     lock = False
     while True:
         m = SIZE_RE.search(t)
@@ -96,6 +96,8 @@ def parse_line(line):
                 group = k
             elif k in FUNCTION_TAGS:
                 function = FUNCTION_TAGS[k]
+            elif k in VARIANT_TAGS:
+                variant = k
             elif k == "lock":
                 lock = True
             elif DRIVE_RE.fullmatch(k) and int(DRIVE_RE.fullmatch(k).group(1)):
@@ -107,7 +109,7 @@ def parse_line(line):
         break
     name = t.strip()
     return {"split": False, "name": name, "type": typ, "auto": typ is None, "size": size,
-            "pitch": pitch, "group": group, "function": function, "drive": drive, "lock": lock}
+            "pitch": pitch, "group": group, "function": function, "drive": drive, "lock": lock, "variant": variant}
 
 
 def has_unknown_option(name):
@@ -131,6 +133,8 @@ def format_entry(e):
         parts.append(f"[{'io' if e['function'] == 'inout' else e['function']}]")
     if e.get("drive"):
         parts.append(f"[{e['drive']}mA]")
+    if e.get("variant"):
+        parts.append(f"[{e['variant']}]")
     if e["size"]:
         parts.append(f"{{{e['size'][0]:g}x{e['size'][1]:g}}}")
     if e["pitch"]:
@@ -187,6 +191,7 @@ def expand(entry, settings):
     def finish(pad, function):
         pad["function"] = function or infer_function(pad["name"], pad["type"])
         pad["drive"] = entry.get("drive")
+        pad["variant"] = entry.get("variant")
         return pad
 
     g = entry["group"]

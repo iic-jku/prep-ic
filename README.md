@@ -193,6 +193,7 @@ One line per entry. Each side lists its pads as seen on the die: top and bottom 
 | `LO [gsgsg]` | differential: GND, LO_P, GND, LO_N, GND |
 | `NAME [in\|out\|tri\|io\|analog\|vdd\|vss\|iovdd\|iovss\|none]` | IO function, selects the IO cell (default guessed from name and type) |
 | `NAME [16mA]` | drive strength of output, tristate and bidirectional cells |
+| `NAME [schmitt]`, `NAME [noesd]` | another IO cell of the same function, where the PDK has one: a Schmitt trigger input, an analog pad without ESD clamp |
 | `NAME [lock]` | locked pad: it can no longer be dragged and *Optimize Pad Order* leaves it in place |
 | `=== NAME` | power split: cuts the IO ring here and starts power domain `NAME` |
 

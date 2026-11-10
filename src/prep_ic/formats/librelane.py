@@ -328,7 +328,7 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
     for p in layout.pins:
         if not p.cell:
             continue
-        master, pins = pdk.cell(p.function, p.drive)
+        master, pins = pdk.cell(p.function, p.drive, p.variant)
         pp = pdk.power_pins_of(p.function)
         power = [f".{pin}({layout.rail(f, p.domain)})" for f in ("iovdd", "iovss", "vdd", "vss") for pin in pp.get(f, [])]
         conns = []
