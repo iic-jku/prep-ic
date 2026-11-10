@@ -20,9 +20,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 
 ### sky130A (`data/pdks/sky130a.json`)
 
-- [ ] Profile from `libs.ref/sky130_fd_io/lef/` and the sky130A LibreLane config: `[in]`, `[out]`, `[tri]` and `[io]` on `sky130_ef_io__gpiov2_pad` with their ties, `[analog]` on `sky130_ef_io__analog_esd_pad` (and `sky130_ef_io__analog_noesd_pad` for a bare pad, as a tag), the supplies on `sky130_ef_io__vccd_lvc_clamped_pad`, `sky130_ef_io__vssd_lvc_clamped_pad`, `sky130_ef_io__vddio_hvc_clamped_pad` and `sky130_ef_io__vssio_hvc_clamped_pad`.
-- [ ] Geometry from the LEF. The template's `config.yaml` states 80 µm GPIO pads, 75 µm supply and analog pads, 198 µm deep pads, 200 µm corners and a 1 µm site. Confirm them there and read the seal ring spacing from the PDK config.
-- [ ] `chip_top.sv` style. The template wraps each GPIO role in a `chip_pad_*` module, so its `PAD_*` lists name `<wrapper>.pad_cell`. Flat instances with the ties inline keep the planner's `pad_<name>` names and need no extra modules. Pick one.
 - [ ] Example project (`examples/sky130a_*.json`), an entry in `tests/data/layout_baseline.json`, and export tests next to the IHP ones in `tests/test_pdk.py`.
 
 ### gf180mcuD (`data/pdks/gf180mcud.json`)

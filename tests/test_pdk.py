@@ -301,6 +301,51 @@ class RingCells(unittest.TestCase):
         self.assertEqual(compac_like().layout().ring_cells, [])
 
 
+class Sky130A(unittest.TestCase):
+    def project(self):
+        p = prep.Project(sides={"L": ["clk [in]", "o [out]", "t [tri]", "bi [io]"], "T": ["ain [analog]", "bare [analog] [noesd]"], "R": [],
+                                "B": ["VDD", "VSS", "IOVDD", "IOVSS"]})
+        p.settings.pdk, p.settings.std.pitch = "sky130A", 100
+        return p
+
+    def test_geometry_from_the_lef(self):
+        pdk = pdk_model.get_pdk("sky130A")
+        self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.cell_depth), ("sky130_ef_io", 1.0, 80.0, 200.0))
+        self.assertEqual((pdk.width_of("inout"), pdk.width_of("vdd"), pdk.width_of("analog")), (80.0, 75.0, 75.0))
+
+    def test_cells(self):
+        lay = self.project().layout()
+        cells = {q.name: q.cell for q in lay.pins}
+        self.assertEqual({cells["clk"], cells["o"], cells["t"], cells["bi"]}, {"sky130_ef_io__gpiov2_pad"})
+        self.assertEqual(cells["ain"], "sky130_ef_io__analog_esd_pad")
+        self.assertEqual(cells["bare"], "sky130_ef_io__analog_noesd_pad")
+        self.assertEqual(cells["VDD"], "sky130_ef_io__vccd_lvc_clamped_pad")
+        self.assertEqual(lay.warnings, [])
+
+    def test_the_connect_slices_are_added(self):
+        lay = self.project().layout()
+        self.assertEqual(len(lay.ring_cells), 2)
+        self.assertEqual({r.b - r.a for r in lay.ring_cells}, {20.0})
+
+    def test_chip_top(self):
+        sv = chip_top_sv(self.project().layout())
+        for conn in (".OE_N(~bi_c2p_en)", ".OE_N(~t_c2p_en)", ".DM(3'b001)", ".DM(3'b110)", ".HLD_H_N(pad_clk_TIE_HI_ESD)",
+                     ".ENABLE_INP_H(pad_clk_TIE_LO_ESD)", ".VCCHIB(VDD)", ".VSWITCH(IOVDD)", ".VCCD_PAD(VDD)", ".P_CORE(ain_padres)"):
+            self.assertIn(conn, sv)
+        self.assertIn("wire pad_clk_TIE_HI_ESD;", sv)
+        self.assertIn("sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um", sv)
+
+    def test_no_drive_variants(self):
+        p = self.project()
+        p.sides["L"][1] = "o [out] [4mA]"
+        self.assertIn("Drive strength ignored for pin 2 o (out)", p.layout().warnings)
+
+    def test_splits_are_refused(self):
+        p = self.project()
+        p.sides["B"] = ["=== ANA"] + p.sides["B"]
+        self.assertEqual(p.layout().splits, [])
+
+
 class Packaging(unittest.TestCase):
     def test_qfn_one_to_one(self):
         p = compac_like(package="OP_QFN32_A4_FIT")

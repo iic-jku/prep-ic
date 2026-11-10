@@ -1,0 +1,376 @@
+{
+  "name": "sky130A",
+  "label": "SkyWater sky130A",
+  "io_library": "sky130_ef_io",
+  "_source": "/foss/pdks/sky130A/libs.ref/sky130_fd_io/lef/sky130_ef_io.lef and libs.tech/librelane/sky130_ef_io/config.tcl",
+  "site": 1.0,
+  "cell_width": 80.0,
+  "cell_depth": 200.0,
+  "corner": 200.0,
+  "edge_spacing": 0.0,
+  "bondpad": {
+    "w": 62.6,
+    "h": 62.45,
+    "inset": 32.99
+  },
+  "default_pitch": 100.0,
+  "core_margin": 100.0,
+  "power_pins": {
+    "vdd": [
+      "VCCD",
+      "VCCHIB"
+    ],
+    "vss": [
+      "VSSD"
+    ],
+    "iovdd": [
+      "VDDIO",
+      "VDDIO_Q",
+      "VDDA",
+      "VSWITCH"
+    ],
+    "iovss": [
+      "VSSIO",
+      "VSSIO_Q",
+      "VSSA"
+    ]
+  },
+  "ring_cells": [
+    {
+      "name": "connect_vcchib_vswitch",
+      "master": "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um",
+      "width": 20.0,
+      "power_pins": {
+        "vdd": [
+          "VCCHIB",
+          "VCCD"
+        ],
+        "iovdd": [
+          "VSWITCH",
+          "VDDIO"
+        ]
+      }
+    },
+    {
+      "name": "connect_vdda_vssa",
+      "master": "sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um",
+      "width": 20.0,
+      "power_pins": {
+        "iovdd": [
+          "VDDA",
+          "VDDIO"
+        ],
+        "iovss": [
+          "VSSA",
+          "VSSIO"
+        ]
+      }
+    }
+  ],
+  "cells": {
+    "in": {
+      "master": "sky130_ef_io__gpiov2_pad",
+      "pins": {
+        "pad": "PAD",
+        "in": "IN"
+      },
+      "ties": {
+        "OUT": "1'b0",
+        "OE_N": "1'b1",
+        "DM": "3'b001",
+        "INP_DIS": "1'b0",
+        "IB_MODE_SEL": "1'b0",
+        "VTRIP_SEL": "1'b0",
+        "SLOW": "1'b0",
+        "HLD_OVR": "1'b0",
+        "HLD_H_N": "@TIE_HI_ESD",
+        "ENABLE_H": "@TIE_HI_ESD",
+        "ENABLE_VDDA_H": "@TIE_HI_ESD",
+        "ENABLE_INP_H": "@TIE_LO_ESD",
+        "ENABLE_VSWITCH_H": "@TIE_LO_ESD",
+        "ENABLE_VDDIO": "1'b1",
+        "ANALOG_EN": "1'b0",
+        "ANALOG_SEL": "1'b0",
+        "ANALOG_POL": "1'b0",
+        "TIE_HI_ESD": "@TIE_HI_ESD",
+        "TIE_LO_ESD": "@TIE_LO_ESD",
+        "IN_H": null,
+        "PAD_A_NOESD_H": null,
+        "PAD_A_ESD_0_H": null,
+        "PAD_A_ESD_1_H": null,
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "out": {
+      "master": "sky130_ef_io__gpiov2_pad",
+      "pins": {
+        "pad": "PAD",
+        "out": "OUT"
+      },
+      "ties": {
+        "IN": null,
+        "OE_N": "1'b0",
+        "DM": "3'b110",
+        "INP_DIS": "1'b1",
+        "IB_MODE_SEL": "1'b0",
+        "VTRIP_SEL": "1'b0",
+        "SLOW": "1'b0",
+        "HLD_OVR": "1'b0",
+        "HLD_H_N": "@TIE_HI_ESD",
+        "ENABLE_H": "@TIE_HI_ESD",
+        "ENABLE_VDDA_H": "@TIE_HI_ESD",
+        "ENABLE_INP_H": "@TIE_LO_ESD",
+        "ENABLE_VSWITCH_H": "@TIE_LO_ESD",
+        "ENABLE_VDDIO": "1'b1",
+        "ANALOG_EN": "1'b0",
+        "ANALOG_SEL": "1'b0",
+        "ANALOG_POL": "1'b0",
+        "TIE_HI_ESD": "@TIE_HI_ESD",
+        "TIE_LO_ESD": "@TIE_LO_ESD",
+        "IN_H": null,
+        "PAD_A_NOESD_H": null,
+        "PAD_A_ESD_0_H": null,
+        "PAD_A_ESD_1_H": null,
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "tri": {
+      "master": "sky130_ef_io__gpiov2_pad",
+      "pins": {
+        "pad": "PAD",
+        "out": "OUT",
+        "oe": "OE_N"
+      },
+      "active_low": [
+        "oe"
+      ],
+      "ties": {
+        "IN": null,
+        "DM": "3'b110",
+        "INP_DIS": "1'b1",
+        "IB_MODE_SEL": "1'b0",
+        "VTRIP_SEL": "1'b0",
+        "SLOW": "1'b0",
+        "HLD_OVR": "1'b0",
+        "HLD_H_N": "@TIE_HI_ESD",
+        "ENABLE_H": "@TIE_HI_ESD",
+        "ENABLE_VDDA_H": "@TIE_HI_ESD",
+        "ENABLE_INP_H": "@TIE_LO_ESD",
+        "ENABLE_VSWITCH_H": "@TIE_LO_ESD",
+        "ENABLE_VDDIO": "1'b1",
+        "ANALOG_EN": "1'b0",
+        "ANALOG_SEL": "1'b0",
+        "ANALOG_POL": "1'b0",
+        "TIE_HI_ESD": "@TIE_HI_ESD",
+        "TIE_LO_ESD": "@TIE_LO_ESD",
+        "IN_H": null,
+        "PAD_A_NOESD_H": null,
+        "PAD_A_ESD_0_H": null,
+        "PAD_A_ESD_1_H": null,
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "inout": {
+      "master": "sky130_ef_io__gpiov2_pad",
+      "pins": {
+        "pad": "PAD",
+        "in": "IN",
+        "out": "OUT",
+        "oe": "OE_N"
+      },
+      "active_low": [
+        "oe"
+      ],
+      "ties": {
+        "DM": "3'b110",
+        "INP_DIS": "1'b0",
+        "IB_MODE_SEL": "1'b0",
+        "VTRIP_SEL": "1'b0",
+        "SLOW": "1'b0",
+        "HLD_OVR": "1'b0",
+        "HLD_H_N": "@TIE_HI_ESD",
+        "ENABLE_H": "@TIE_HI_ESD",
+        "ENABLE_VDDA_H": "@TIE_HI_ESD",
+        "ENABLE_INP_H": "@TIE_LO_ESD",
+        "ENABLE_VSWITCH_H": "@TIE_LO_ESD",
+        "ENABLE_VDDIO": "1'b1",
+        "ANALOG_EN": "1'b0",
+        "ANALOG_SEL": "1'b0",
+        "ANALOG_POL": "1'b0",
+        "TIE_HI_ESD": "@TIE_HI_ESD",
+        "TIE_LO_ESD": "@TIE_LO_ESD",
+        "IN_H": null,
+        "PAD_A_NOESD_H": null,
+        "PAD_A_ESD_0_H": null,
+        "PAD_A_ESD_1_H": null,
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "analog": {
+      "master": "sky130_ef_io__analog_esd_pad",
+      "width": 75.0,
+      "pins": {
+        "pad": "P_PAD",
+        "analog": "P_CORE"
+      },
+      "variants": {
+        "noesd": {
+          "master": "sky130_ef_io__analog_noesd_pad"
+        }
+      },
+      "bondpad": {
+        "w": 60.84,
+        "h": 60.825,
+        "inset": 34.055
+      },
+      "ties": {
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "vdd": {
+      "master": "sky130_ef_io__vccd_lvc_clamped_pad",
+      "width": 75.0,
+      "pins": {},
+      "bondpad": {
+        "w": 54.4,
+        "h": 67.265,
+        "inset": 30.835
+      },
+      "power_pins": {
+        "vdd": [
+          "VCCD_PAD",
+          "VCCD",
+          "VCCHIB"
+        ],
+        "vss": [
+          "VSSD"
+        ],
+        "iovdd": [
+          "VDDIO",
+          "VDDIO_Q",
+          "VDDA",
+          "VSWITCH"
+        ],
+        "iovss": [
+          "VSSIO",
+          "VSSIO_Q",
+          "VSSA"
+        ]
+      },
+      "ties": {
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "vss": {
+      "master": "sky130_ef_io__vssd_lvc_clamped_pad",
+      "width": 75.0,
+      "pins": {},
+      "bondpad": {
+        "w": 54.4,
+        "h": 67.265,
+        "inset": 30.835
+      },
+      "power_pins": {
+        "vdd": [
+          "VCCD",
+          "VCCHIB"
+        ],
+        "vss": [
+          "VSSD_PAD",
+          "VSSD"
+        ],
+        "iovdd": [
+          "VDDIO",
+          "VDDIO_Q",
+          "VDDA",
+          "VSWITCH"
+        ],
+        "iovss": [
+          "VSSIO",
+          "VSSIO_Q",
+          "VSSA"
+        ]
+      },
+      "ties": {
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "iovdd": {
+      "master": "sky130_ef_io__vddio_hvc_clamped_pad",
+      "width": 75.0,
+      "pins": {},
+      "bondpad": {
+        "w": 60.84,
+        "h": 60.825,
+        "inset": 34.055
+      },
+      "power_pins": {
+        "vdd": [
+          "VCCD",
+          "VCCHIB"
+        ],
+        "vss": [
+          "VSSD"
+        ],
+        "iovdd": [
+          "VDDIO_PAD",
+          "VDDIO",
+          "VDDIO_Q",
+          "VDDA",
+          "VSWITCH"
+        ],
+        "iovss": [
+          "VSSIO",
+          "VSSIO_Q",
+          "VSSA"
+        ]
+      },
+      "ties": {
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    },
+    "iovss": {
+      "master": "sky130_ef_io__vssio_hvc_clamped_pad",
+      "width": 75.0,
+      "pins": {},
+      "bondpad": {
+        "w": 60.84,
+        "h": 60.825,
+        "inset": 34.055
+      },
+      "power_pins": {
+        "vdd": [
+          "VCCD",
+          "VCCHIB"
+        ],
+        "vss": [
+          "VSSD"
+        ],
+        "iovdd": [
+          "VDDIO",
+          "VDDIO_Q",
+          "VDDA",
+          "VSWITCH"
+        ],
+        "iovss": [
+          "VSSIO_PAD",
+          "VSSIO",
+          "VSSIO_Q",
+          "VSSA"
+        ]
+      },
+      "ties": {
+        "AMUXBUS_A": null,
+        "AMUXBUS_B": null
+      }
+    }
+  }
+}
