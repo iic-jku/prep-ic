@@ -133,6 +133,11 @@ class Project:
             return len(self.sides.get(side, [])) - 1 - line
         return line
 
+    def reload_macros(self) -> List[str]:
+        """Read the macro LEFs again. The warnings replace ``load_warnings``, so the findings stay current."""
+        self.load_warnings = self.floorplan.reload()
+        return self.load_warnings
+
     def layout(self, selected=None):
         """Compute the layout, see :func:`prep_ic.model.layout.build_layout`."""
         from .layout import build_layout

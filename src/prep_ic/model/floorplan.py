@@ -135,7 +135,8 @@ class Floorplan:
         """Read the LEF of every macro again (once per directory); returns warnings.
 
         A macro whose LEF cannot be read keeps its last known values. Marked pins that are no
-        longer in the LEF or became power pins stay marked but are skipped.
+        longer in the LEF or became power pins stay marked but are skipped. A project's
+        ``load_warnings`` do not change here, :meth:`Project.reload_macros` updates them too.
         """
         warnings, read = [], {}
         for m in self.macros:
