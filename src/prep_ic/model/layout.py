@@ -199,7 +199,8 @@ def build_layout(project, selected=None):
                     a, b = E - b, E - a
                 p["a"], p["b"] = a, b
                 if pdk:  # IO cell on the grid, as centred in the slot as the grid allows
-                    p["c"] = a + _snap((b - a - pdk.cell_width) / 2, pdk.site) + pdk.cell_width / 2
+                    cw = pdk.width_of(p["function"])
+                    p["c"] = a + _snap((b - a - cw) / 2, pdk.site) + cw / 2
                 else:
                     p["c"] = (a + b) / 2
                 cur += p["pitch"]
@@ -319,7 +320,8 @@ def build_layout(project, selected=None):
         for p in pins:
             if p["cell"]:
                 c = p["c"]
-                x, y, w, h = cell_rect(p["side"], c - pdk.cell_width / 2, c + pdk.cell_width / 2, d0)
+                cw = pdk.width_of(p["function"])
+                x, y, w, h = cell_rect(p["side"], c - cw / 2, c + cw / 2, d0)
                 add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=f"{p['side']}:{p['line']}"))
 
     # Power splits: gap in the IO ring and the name of the domain that follows
@@ -408,9 +410,12 @@ def build_layout(project, selected=None):
     if deep:
         warnings.append("Pad deeper than IO cell at pin " + ", ".join(deep))
     if pdk:
-        narrow = [str(p["no"]) for p in pins if p["cell"] and p["pitch"] < pdk.cell_width - 1e-9]
-        if narrow:
-            warnings.append(f"Pitch smaller than the IO cell ({pdk.cell_width:g} µm) at pin " + ", ".join(narrow))
+        narrow = {}
+        for p in pins:
+            if p["cell"] and p["pitch"] < pdk.width_of(p["function"]) - 1e-9:
+                narrow.setdefault(pdk.width_of(p["function"]), []).append(str(p["no"]))
+        for width, nos in narrow.items():
+            warnings.append(f"Pitch smaller than the IO cell ({width:g} µm) at pin " + ", ".join(nos))
         for dom in domains:
             have = {p["function"] for p in pins if p["domain"] == dom}
             missing = [RAILS[f] for f in POWER_FUNCTIONS if f not in have]

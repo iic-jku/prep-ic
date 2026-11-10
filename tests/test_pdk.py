@@ -1,16 +1,26 @@
 # SPDX-FileCopyrightText: 2026 Maximilian Golser and Simon Dorrer
 # SPDX-License-Identifier: Apache-2.0
+import dataclasses
 import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tests import ROOT  # noqa: F401  (sets the import path)
 
 import prep_ic as prep
+from prep_ic.model import pdk as pdk_model
 from prep_ic.formats.librelane import (bondplan_yaml, chip_top_sv, config_yaml, librelane_files,
                                                pad_cfg_tcl)
 from prep_ic.model.parse import format_entry, infer_function, parse_line
+
+
+def with_cell(function, **fields):
+    """While active, ``ihp-sg13g2`` reads with these fields added to one of its IO cells."""
+    base = pdk_model.get_pdk("ihp-sg13g2")
+    cells = {**base.cells, function: {**base.cells[function], **fields}}
+    return mock.patch.object(pdk_model, "_pdks", lambda: {"ihp-sg13g2": dataclasses.replace(base, cells=cells)})
 
 
 def compac_like(split=False, package=""):
@@ -69,6 +79,24 @@ class PdkGeometry(unittest.TestCase):
         p = compac_like()
         p.settings.std.pitch = 70
         self.assertTrue(any(w.startswith("Pitch smaller than the IO cell") for w in p.layout().warnings))
+
+    def test_cell_width_per_function(self):
+        with with_cell("vdd", width=75.0):
+            lay = compac_like().layout()
+            vdd = next(q for q in lay.pins if q.name == "VDD" and q.side == "L")
+            low = vdd.y - 37.5
+            self.assertEqual(low % 1, 0)  # the narrower cell stays on the site grid
+            self.assertIn(f"{{IO_WEST pad_VDD_0 {low:g}}}", pad_cfg_tcl(lay))
+
+    def test_pitch_warning_uses_the_width_of_each_cell(self):
+        with with_cell("vdd", width=75.0), with_cell("vss", width=75.0):
+            p = compac_like()
+            p.settings.std.pitch = 78
+            warnings = [w for w in p.layout().warnings if w.startswith("Pitch smaller")]
+            self.assertEqual(len(warnings), 1)
+            self.assertIn("(80 µm)", warnings[0])
+            supply = [str(q.no) for q in p.layout().pins if q.function in ("vdd", "vss")]
+            self.assertFalse(set(supply) & set(warnings[0].split(" at pin ")[1].split(", ")))
 
     def test_missing_supply(self):
         p = compac_like()
