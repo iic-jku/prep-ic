@@ -38,7 +38,7 @@ class Pdk:
     core_margin: float         # IO ring to core area (core power ring)
     split_gap: float           # gap in the IO ring at a power split
     split_filler: str          # filler master with the width of split_gap
-    power_pins: Dict[str, str]
+    power_pins: Dict[str, object]  # rail kind to a pin or a list of pins, a cell may name its own "power_pins"
     cells: Dict[str, dict]
     bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
 
@@ -50,6 +50,11 @@ class Pdk:
     def width_of(self, function):
         """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
         return self.cells.get(function, {}).get("width", self.cell_width)
+
+    def power_pins_of(self, function):
+        """Rail kind → supply pins of the IO cell of a function, ``power_pins`` unless the cell has its own."""
+        pins = self.cells.get(function, {}).get("power_pins", self.power_pins)
+        return {rail: [p] if isinstance(p, str) else list(p) for rail, p in pins.items()}
 
     def bondpad_of(self, function):
         """``(w, h, inset)`` of the bond pad of a function, ``inset`` as in ``bondpad_inset``."""
