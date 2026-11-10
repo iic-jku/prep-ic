@@ -6,7 +6,7 @@ Planned work on PREP-IC. Each item names the files it touches. Remove an item in
 ## Open after the 0.1.2 release
 
 - [ ] **PySide6 limit (`pyproject.toml`, `README.md`).** On Linux with Python 3.10 and 3.11 the dependency stays below 6.12, since the 6.12.0 wheels abort these Python versions. [PYSIDE-3474](https://qt-project.atlassian.net/browse/PYSIDE-3474) names a fix for 6.12.1, not released on 2026-11-04. While the limit is there, CI cannot see a fixed release on those Pythons, so lift it on a branch and read the `ubuntu-latest, 3.10` job. The ticket reports `Signal.emit()` and the abort here came from `QFont` setters, so that job decides, not the ticket's state.
-- [ ] **Maximilian Golser on PyPI.** Only Simon Dorrer's account owns `prep-ic` on PyPI, so add him as a maintainer.
+- [ ] **Maximilian Golser on PyPI and Zenodo.** Only Simon Dorrer's account owns `prep-ic` on PyPI, so add him as a maintainer. The Zenodo record has no ORCID for him.
 
 
 ## Found in the review of 0.1.2
