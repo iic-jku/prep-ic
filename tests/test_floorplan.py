@@ -196,6 +196,17 @@ class ReloadTests(unittest.TestCase):
         self.assertEqual(fp.macros[1].size(), (500.0, 310.0))
         self.assertIs(fp.macros[0].cache, fp.macros[1].cache)  # one read per directory
 
+    def test_reload_reports_a_marked_pin_that_became_power(self):
+        fp = Floorplan([Macro.from_dir(str(self.dir), "a0")])
+        fp.macros[0].io = ["VIN_P", "VIN_N"]
+        before = "PIN VIN_N\n    DIRECTION INPUT ;\n    USE ANALOG ;"
+        text = self.lef.read_text()
+        self.assertIn(before, text)
+        self.lef.write_text(text.replace(before, before.replace("USE ANALOG", "USE POWER")))
+        self.assertEqual(fp.reload(), ["Pin VIN_N of a0 is a power pin in the LEF, it gets no flyline"])
+        self.assertEqual(fp.macros[0].io, ["VIN_P", "VIN_N"])
+        self.assertEqual([p.name for p in fp.macros[0].io_pins()], ["VIN_P"])
+
     def test_reload_missing_dir_keeps_cache(self):
         m = Macro.from_dir(str(self.dir), "a0")
         shutil.rmtree(self.dir)
