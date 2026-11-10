@@ -198,6 +198,22 @@ class LibreLaneOutput(unittest.TestCase):
         west = cfg.split("PAD_WEST: [")[1].split("\n]")[0]
         self.assertLess(west.index("pad_out_8"), west.index("pad_clk"))  # bottom to top
 
+    def test_several_supply_pins_per_rail(self):
+        pins = {"iovdd": ["VDDIO", "VSWITCH"], "iovss": "VSSIO", "vdd": ["VCCD", "VCCHIB"], "vss": ["VSSD"]}
+        with with_profile(power_pins=pins):
+            sv = chip_top_sv(compac_like().layout())
+        for conn in (".VDDIO(IOVDD)", ".VSWITCH(IOVDD)", ".VSSIO(IOVSS)", ".VCCD(VDD)", ".VCCHIB(VDD)", ".VSSD(VSS)"):
+            self.assertIn(conn, sv)
+        self.assertNotIn(".iovdd(", sv)
+
+    def test_supply_pins_of_one_cell(self):
+        with with_cell("iovdd", power_pins={"iovdd": ["DVDD"], "iovss": ["DVSS"], "vss": ["VSS"]}):
+            sv = chip_top_sv(compac_like().layout())
+        block = sv[sv.index("sg13g2_IOPadIOVdd"):].split(");")[0]
+        self.assertIn(".DVDD(IOVDD)", block)
+        self.assertNotIn(".vdd(", block)  # this cell has no pin for the core supply
+        self.assertIn(".vdd(VDD)", sv)  # the others keep the PDK-wide map
+
     def test_chip_top_ports(self):
         sv = chip_top_sv(compac_like(split=True).layout())
         for decl in ("inout wire [8:0] out_PAD", "inout wire [1:0] ain_PAD", "inout wire VDD_ANA",
