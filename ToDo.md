@@ -33,4 +33,3 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 ### After both
 
 - [ ] README: the PDK table and the IO cell table in *Supported PDKs and Packages* (the latter assumes `<lib>_IOPad*` names), the *IMPORTANT* box that names only the IHP Open PDK, the `PAD_BONDPAD_NAME` line, and the closing sentence on adding a PDK. `doc/architecture.md`: the grid note (1 µm for both IHP profiles) and *Data, not code, for technologies*.
-- [ ] A test that compares every profile with its LEF when the PDK is installed (`$PDK_ROOT`) and is skipped otherwise, so a PDK update that changes a cell shows up.
