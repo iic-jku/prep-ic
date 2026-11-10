@@ -373,15 +373,18 @@ def chip_core_template_sv(layout, source="", core_module="chip_core", macros=())
 CORE_INSTANCE = "i_chip_core"  # instance name of the core in chip_top.sv
 ORIENTATION = {0: "N", 90: "E", 180: "S", 270: "W"}  # clockwise rotation in the planner
 # Views of a LibreLane run directory. Lint takes the first of vh, pnl and nl that a macro has.
-VERILOG_VIEWS = (("vh", "{}.vh"), ("nl", "{}.nl.v"), ("pnl", "{}.pnl.v"))
+VERILOG_VIEWS = (("vh", ("{}.vh", "{}.v")), ("nl", ("{}.nl.v",)), ("pnl", ("{}.pnl.v",)))  # .v: hand-made macros
 # view, key, file. LibreLane names a view's folder key.strip("_*"), so the key "nom_*" lives in spef/nom.
 CORNER_VIEWS = (("lib", "{corner}", "{name}__{corner}.lib"), ("spef", "{corner}_*", "{name}.{corner}.spef"))
 
 
 def _macro_views(name, final, path_value):
     """``MACROS`` lines of the views found below ``final``, ``path_value`` writing a file's path."""
-    out = [f"    {view}: [{path_value(final / view / file.format(name))}]" for view, file in VERILOG_VIEWS
-           if (final / view / file.format(name)).is_file()]
+    out = []
+    for view, files in VERILOG_VIEWS:
+        found = [final / view / f.format(name) for f in files if (final / view / f.format(name)).is_file()]
+        if found:
+            out.append(f"    {view}: [{path_value(found[0])}]")
     if not out:
         out.append("    # no vh, pnl or nl in LibreLane's layout below final/, so lint stops with MODMISSING")
     for view, key, file in CORNER_VIEWS:
@@ -391,6 +394,8 @@ def _macro_views(name, final, path_value):
             out.append(f"    {view}:")
             out += [f"      {key.format(corner=c)}: [{path_value(final / view / c / file.format(name=name, corner=c))}]"
                     for c in corners]
+    if (final / "lib" / f"{name}.lib").is_file():
+        out.append(f'    # final/lib/{name}.lib not exported, it names no corner. If it holds for all of them: lib: {{"*": [...]}}')
     return out
 
 
