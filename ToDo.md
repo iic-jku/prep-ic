@@ -29,8 +29,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 
 ### gf180mcuD (`data/pdks/gf180mcud.json`)
 
-- [ ] Profile from `libs.ref/gf180mcu_fd_io/lef/` and `libs.ref/gf180mcu_ocd_io/lef/` (one profile each, or a library choice in one profile) and the gf180mcuD LibreLane config: `[in]` on `__in_c` (or the Schmitt trigger `__in_s`, as a tag), `[out]`, `[tri]` and `[io]` on a bidirectional cell with ties, `[analog]` on `__asig_5p0`, the supplies on `__dvdd` and `__dvss`, plus `__vdd` and `__vss` in `gf180mcu_ocd_io`.
-- [ ] Geometry from the LEF: cell width, depth, corner and site. The template flow adds the seal ring with `KLayout.SealRing`, and its die includes 26 µm of seal ring per side, so `edge_spacing` needs a look.
 - [ ] **wafer.space slots.** A chip for a wafer.space gf180mcu run goes into one of four fixed slots, each with a fixed die, pad count and pad order (`flow/librelane/slots/slot_*.yaml` in the template, e.g. `DIE_AREA: [0, 0, 3932, 5122]` for `slot_1x1`). A slot preset (fixed die, locked supply pads, open signal slots) lets the planner assign the signals to a slot instead of growing the die.
 - [ ] Example project, baseline entry and tests as for sky130A.
 

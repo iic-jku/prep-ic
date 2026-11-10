@@ -277,7 +277,7 @@ def _range(s):
 
 
 def _rails(layout):
-    return [layout.rail(f, d) for d in layout.domains for f in ("iovdd", "iovss", "vdd", "vss")]
+    return list(dict.fromkeys(layout.rail(f, d) for d in layout.domains for f in ("iovdd", "iovss", "vdd", "vss")))
 
 
 def _tied_pins(cell, inst):
@@ -311,12 +311,18 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
     out += [line + ("," if i < len(ports) - 1 else "") for i, line in enumerate(ports)]
     out += [");", ""]
 
+    pin_map = {base: pdk.cell(s["function"])[1] for base, s in sig.items()}
+
+    def on_pad(base, role):  # one pin is the bond pad and the core side at once, as in the gf180mcu analog pad
+        return role != "pad" and pin_map[base].get(role) == pin_map[base].get("pad")
+
     roles_of = {}
     for base, s in sig.items():
         roles = [r for r in pdk.cell(s["function"])[1] if r != "pad"]
         roles_of[base] = roles
         for r in roles:
-            out.append(f"    wire {_range(s)}{base}_{NET_SUFFIX[r]};")
+            if not on_pad(base, r):
+                out.append(f"    wire {_range(s)}{base}_{NET_SUFFIX[r]};")
     out.append("")
 
     for p in layout.pins:
@@ -330,6 +336,8 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
             base, index = names.port[p.no]
             idx = f"[{index}]" if index is not None else ""
             for role, pin in pins.items():
+                if on_pad(base, role):
+                    continue
                 net = f"{base}_PAD{idx}" if role == "pad" else f"{base}_{NET_SUFFIX[role]}{idx}"
                 invert = "~" if role in pdk.cells[p.function].get("active_low", ()) else ""
                 conns.append(f".{pin}({invert}{net})")
@@ -348,7 +356,7 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
     core = []
     for base, s in sig.items():
         for r in roles_of[base]:
-            core.append(f".{base}{CORE_PORT_SUFFIX[r]}({base}_{NET_SUFFIX[r]})")
+            core.append(f".{base}{CORE_PORT_SUFFIX[r]}({base}_{'PAD' if on_pad(base, r) else NET_SUFFIX[r]})")
     core_power = [layout.rail(f, d) for d in layout.domains for f in ("vdd", "vss")]
     out += [f"    {core_module} i_{core_module} ("]
     out.append("`ifdef USE_POWER_PINS")
