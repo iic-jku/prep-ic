@@ -132,13 +132,17 @@ def build_layout(project, selected=None):
     split_gap = pdk.split_gap if pdk else SPLIT_GAP
 
     sides = {}
-    sized = []
+    sized, refused = [], []
     for s in SIDES:
         entries = []
         for i, line in enumerate(project.sides.get(s, [])):
             e = parse_line(line)
             if e is None:
                 entries.append({"line": i, "blank": True, "pads": [], "width": P, "group": None})
+                continue
+            if e["split"] and split_gap is None:  # keeps its line, so the editor's pin numbers stay aligned
+                refused.append(e["domain"])
+                entries.append({"line": i, "blank": True, "pads": [], "width": 0.0, "group": None})
                 continue
             if e["split"]:
                 entries.append({"line": i, "blank": True, "split": e["domain"], "pads": [],
@@ -155,6 +159,8 @@ def build_layout(project, selected=None):
             entries.append({"line": i, "blank": False, "pads": pads, "group": e["group"],
                             "width": sum(p["pitch"] for p in pads)})
         sides[s] = entries
+    if refused:
+        warnings.append(f"Power split {', '.join(refused)} ignored: {pdk.label} has no split mechanism in its profile")
     if sized:
         warnings.append("Custom pad size ignored with a PDK (bondpad of the PDK used) for " + ", ".join(sized))
 

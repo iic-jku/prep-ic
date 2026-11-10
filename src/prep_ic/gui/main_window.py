@@ -707,7 +707,8 @@ class MainWindow(QMainWindow):
                 f"IO ring from {pdk.io_library}: {pdk.edge_spacing:g} µm seal ring spacing + "
                 f"{pdk.cell_depth:g} µm IO cells ({pdk.cell_width:g} µm wide), bondpads "
                 f"{pdk.bondpad_w:g}×{pdk.bondpad_h:g} µm. Pad size and IO cell height come from the PDK, "
-                f"pitches snap to {pdk.site:g} µm. Power splits leave a {pdk.split_gap:g} µm gap.")
+                f"pitches snap to {pdk.site:g} µm. "
+                + (f"Power splits leave a {pdk.split_gap:g} µm gap." if pdk.split_gap else "This PDK has no power splits."))
         else:
             self.pdk_note.setText("Without a PDK the ring is planned abstractly; select one for IO cells "
                                   "and the LibreLane output.")

@@ -14,8 +14,10 @@
   },
   "default_pitch": 100.0,
   "core_margin": 45.0,
-  "split_gap": 10.0,
-  "split_filler": "sg13cmos5l_Filler2000",
+  "split": {
+    "gap": 10.0,
+    "filler": "sg13cmos5l_Filler2000"
+  },
   "power_pins": {
     "vdd": "vdd",
     "vss": "vss",

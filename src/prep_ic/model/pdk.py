@@ -38,8 +38,8 @@ class Pdk:
     bondpad_h: float
     default_pitch: float
     core_margin: float         # IO ring to core area (core power ring)
-    split_gap: float           # gap in the IO ring at a power split
-    split_filler: str          # filler master with the width of split_gap
+    split_gap: Optional[float]   # gap in the IO ring at a power split, None: this PDK refuses splits
+    split_filler: Optional[str]  # filler master with the width of split_gap
     power_pins: Dict[str, object]  # rail kind to a pin or a list of pins, a cell may name its own "power_pins"
     cells: Dict[str, dict]
     rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
@@ -113,8 +113,9 @@ def _pdks():
             name=d["name"], label=d["label"], io_library=d["io_library"], site=d["site"],
             cell_width=d["cell_width"], cell_depth=d["cell_depth"], corner=d["corner"],
             edge_spacing=d["edge_spacing"], bondpad_w=d["bondpad"]["w"], bondpad_h=d["bondpad"]["h"],
-            default_pitch=d["default_pitch"], core_margin=d["core_margin"], split_gap=d["split_gap"],
-            split_filler=d["split_filler"], power_pins=d["power_pins"], cells=d["cells"],
+            default_pitch=d["default_pitch"], core_margin=d["core_margin"],
+            split_gap=(d.get("split") or {}).get("gap"), split_filler=(d.get("split") or {}).get("filler"),
+            power_pins=d["power_pins"], cells=d["cells"],
             bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
     return out
 

@@ -18,7 +18,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 ### Profile format (`model/pdk.py`, `model/layout.py`, `formats/librelane.py`, `gui/main_window.py`)
 
 - [ ] **Ring cells that are not pads.** The sky130 ring needs the 20 µm connect slices `sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um` and `sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um`. The model knows pads, spacers and the split filler only. Such cells take room on a side, so they belong in the layout and the die size, in the `PAD_*` lists and in `chip_top.sv`.
-- [ ] **Power splits per PDK.** A split is an IHP gap of `split_gap`, kept free by a temporary `split_filler` during the IO fill. The sky130 ring buses run through the pads by abutment, so a domain cut needs a cell of the library that breaks them. Candidates to check are `sky130_ef_io__disconnect_vccd_slice_5um` and `sky130_ef_io__disconnect_vdda_slice_5um` in sky130, and `__brk2` and `__brk5` in the gf180mcu IO libraries. Make the split mechanism an entry of the profile, and refuse splits for a PDK without one.
 - [ ] **Drive strength per PDK.** The tags `[4mA]`, `[16mA]` and `[30mA]` select IHP masters. The sky130 GPIO pad has no drive variants (it has `SLOW` and the `DM` modes). gf180mcu has the fixed 24 mA cell `__bi_24t` that the template uses, and `__bi_t` with the drive select pins `PDRV0` and `PDRV1`, to check against the LEF. A tag the PDK cannot honor gets a warning.
 
 ### sky130A (`data/pdks/sky130a.json`)
