@@ -23,6 +23,12 @@ def with_cell(function, **fields):
     return mock.patch.object(pdk_model, "_pdks", lambda: {"ihp-sg13g2": dataclasses.replace(base, cells=cells)})
 
 
+def with_profile(**fields):
+    """While active, ``ihp-sg13g2`` reads with these profile fields changed."""
+    base = pdk_model.get_pdk("ihp-sg13g2")
+    return mock.patch.object(pdk_model, "_pdks", lambda: {"ihp-sg13g2": dataclasses.replace(base, **fields)})
+
+
 def compac_like(split=False, package=""):
     """8 pads per side on a 1600 µm IHP die, as in a real tapeout (checked with LibreLane)."""
     p = prep.Project()
@@ -97,6 +103,28 @@ class PdkGeometry(unittest.TestCase):
             self.assertIn("(80 µm)", warnings[0])
             supply = [str(q.no) for q in p.layout().pins if q.function in ("vdd", "vss")]
             self.assertFalse(set(supply) & set(warnings[0].split(" at pin ")[1].split(", ")))
+
+    def test_bondpad_inside_the_cell(self):
+        with with_profile(bondpad_inset=2.0, bondpad_w=60.0, bondpad_h=60.0):
+            lay = compac_like().layout()
+            out0 = next(p for p in lay.pins if p.name == "out[0]")  # bottom side, 140 um seal ring spacing
+            self.assertEqual((out0.w, out0.h, out0.y), (60.0, 60.0, 140 + 2 + 30))
+            self.assertEqual(lay.warnings, [])
+            self.assertNotIn("place_bondpad", pad_cfg_tcl(lay))
+
+    def test_bondpad_of_one_cell(self):
+        with with_profile(bondpad_inset=2.0, bondpad_w=60.0, bondpad_h=60.0):
+            with with_cell("vdd", bondpad={"w": 54.0, "h": 67.0, "inset": 31.0}):
+                lay = compac_like().layout()
+                vdd = next(p for p in lay.pins if p.name == "VDD" and p.side == "L")
+                self.assertEqual((vdd.w, vdd.h, vdd.x), (54.0, 67.0, 140 + 31 + 33.5))
+                out = next(p for p in lay.pins if p.name == "out[8]")
+                self.assertEqual((out.w, out.h), (60.0, 60.0))
+
+    def test_separate_bondpad_stays_between_seal_ring_and_cell(self):
+        lay = compac_like().layout()
+        self.assertEqual(next(p for p in lay.pins if p.name == "out[0]").y, 105)
+        self.assertIn("place_bondpad", pad_cfg_tcl(lay))
 
     def test_missing_supply(self):
         p = compac_like()

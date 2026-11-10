@@ -245,6 +245,7 @@ def build_layout(project, selected=None):
             c = pdk.cell(p["function"], p["drive"])
             if c:
                 p["cell"] = c[0]
+                p["w"], p["h"] = pdk.bondpad_of(p["function"])[:2]
                 if p["drive"] and not pdk.drives(p["function"]):
                     warnings.append(f"Drive strength ignored for pin {p['no']} {p['name']} ({p['function']})")
                 elif p["drive"] and p["drive"] not in pdk.drives(p["function"]):
@@ -259,11 +260,16 @@ def build_layout(project, selected=None):
             return depth0, H + a, H - depth0, b - a
         return W - H, H + a, H - depth0, b - a
 
-    ins = (pdk.edge_spacing - pdk.bondpad_h) if pdk else H * 0.05
+    def inset(p):
+        """Die edge to the outer edge of the bond pad."""
+        if not pdk:
+            return H * 0.05
+        own = pdk.bondpad_of(p["function"])[2]
+        return pdk.edge_spacing - p["h"] if own is None else pdk.edge_spacing + own
 
     def pad_rect(p):
         c = p["c"]
-        w, h, s = p["w"], p["h"], p["side"]
+        w, h, s, ins = p["w"], p["h"], p["side"], inset(p)
         if s == "T":
             return H + c - w / 2, ins, w, h
         if s == "B":
@@ -406,7 +412,7 @@ def build_layout(project, selected=None):
     wide = [str(p["no"]) for p in pins if p["w"] > p["pitch"] + 1e-9]
     if wide:
         warnings.append("Pad wider than pitch (overlaps) at pin " + ", ".join(wide))
-    deep = [str(p["no"]) for p in pins if p["h"] + ins > H + 1e-9]
+    deep = [str(p["no"]) for p in pins if p["h"] + inset(p) > H + 1e-9]
     if deep:
         warnings.append("Pad deeper than IO cell at pin " + ", ".join(deep))
     if pdk:
