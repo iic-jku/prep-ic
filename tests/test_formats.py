@@ -281,6 +281,25 @@ class NoQtOutsideGui(unittest.TestCase):
         self.assertIn("error: Qt is missing", r.stderr)
         self.assertNotIn("Traceback", r.stderr)
 
+    def test_gui_start_with_a_broken_qt_names_the_cause(self):
+        code = (
+            "import sys\n"
+            "class Broken:\n"
+            "    def find_spec(self, name, path=None, target=None):\n"
+            "        if name.startswith('PySide6'):\n"
+            "            raise ImportError('libEGL.so.1: cannot open shared object file')\n"
+            "sys.meta_path.insert(0, Broken())\n"
+            "sys.modules['PyQt6'] = None\n"
+            "import prep_ic.cli as cli\n"
+            "sys.exit(cli.main([]))\n"
+        )
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=ROOT,
+                           env=child_env())
+        self.assertEqual(r.returncode, 1, r.stderr)
+        self.assertIn("error: PySide6 cannot be loaded: libEGL.so.1", r.stderr)
+        self.assertNotIn("Qt is missing", r.stderr)
+        self.assertNotIn("Traceback", r.stderr)
+
     def test_no_qt_import_in_source(self):
         src = ROOT / "src" / "prep_ic"
         for path in src.rglob("*.py"):
