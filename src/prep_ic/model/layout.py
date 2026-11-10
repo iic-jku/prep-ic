@@ -431,7 +431,7 @@ def build_layout(project, selected=None):
             warnings.append(f"Pitch smaller than the IO cell ({width:g} µm) at pin " + ", ".join(nos))
         for dom in domains:
             have = {p["function"] for p in pins if p["domain"] == dom}
-            missing = [pdk.rails[f] for f in POWER_FUNCTIONS if f not in have]
+            missing = list(dict.fromkeys(pdk.rails[f] for f in POWER_FUNCTIONS if f not in have))
             if missing:
                 where = f"Power domain {dom}" if dom else "The IO ring"
                 warnings.append(f"{where} has no {'/'.join(missing)} pad")

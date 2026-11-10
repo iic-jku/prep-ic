@@ -177,6 +177,49 @@ class SplitPerPdk(unittest.TestCase):
         self.assertIn("findMaster", pad_cfg_tcl(compac_like(split=True).layout()))
 
 
+class Gf180mcuD(unittest.TestCase):
+    def project(self):
+        p = prep.Project(sides={"L": ["clk [in]", "out0 [out]", "bi [io]", "ain [analog]"], "T": [], "R": [],
+                                "B": ["VDD", "VSS", "DVDD [iovdd]", "DVSS [iovss]"]})
+        p.settings.pdk, p.settings.std.pitch = "gf180mcuD", 100
+        return p
+
+    def test_geometry_from_the_lef(self):
+        pdk = pdk_model.get_pdk("gf180mcuD")
+        self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.corner, pdk.edge_spacing), ("gf180mcu_fd_io", 0.1, 75.0, 355.0, 26.0))
+        self.assertEqual((pdk.bondpad_w, pdk.bondpad_h), (60.0, 60.0))
+
+    def test_cells_and_rails(self):
+        lay = self.project().layout()
+        cells = {q.name: q.cell for q in lay.pins}
+        self.assertEqual(cells["clk"], "gf180mcu_fd_io__in_c")
+        self.assertEqual({cells["out0"], cells["bi"]}, {"gf180mcu_fd_io__bi_24t"})
+        self.assertEqual({cells["VDD"], cells["DVDD"]}, {"gf180mcu_fd_io__dvdd"})
+        self.assertEqual({cells["VSS"], cells["DVSS"]}, {"gf180mcu_fd_io__dvss"})
+        self.assertEqual((lay.rail("iovdd", ""), lay.rail("iovss", "")), ("VDD", "VSS"))  # the supply pads short the two rings
+        self.assertEqual(lay.warnings, [])
+
+    def test_chip_top(self):
+        sv = chip_top_sv(self.project().layout())
+        for conn in (".PU(1'b0)", ".CS(1'b0)", ".OE(1'b1)", ".IE(1'b0)", ".Y()", ".OE(bi_c2p_en)", ".A(out0_c2p)",
+                     ".ASIG5V(ain_PAD)", ".DVDD(VDD)", ".DVSS(VSS)", ".VDD(VDD)"):
+            self.assertIn(conn, sv)
+        self.assertEqual(sv.count("inout wire VDD"), 1)  # one port although two rail kinds share the net
+
+    def test_splits_are_refused(self):
+        p = self.project()
+        p.sides["B"] = ["=== ANA"] + p.sides["B"]
+        self.assertEqual(p.layout().splits, [])
+        self.assertTrue(any("no split mechanism" in w for w in p.layout().warnings))
+
+    def test_drive_the_cell_cannot_honor_is_a_warning(self):
+        p = self.project()
+        p.sides["L"][1] = "out0 [out] [4mA]"
+        self.assertIn("No 4 mA cell for pin 2 out0, using gf180mcu_fd_io__bi_24t", p.layout().warnings)
+        p.sides["L"][1] = "out0 [out] [24mA]"
+        self.assertFalse(any("mA" in w for w in p.layout().warnings))
+
+
 class Packaging(unittest.TestCase):
     def test_qfn_one_to_one(self):
         p = compac_like(package="OP_QFN32_A4_FIT")
@@ -281,6 +324,14 @@ class LibreLaneOutput(unittest.TestCase):
             lay = compac_like().layout()
         self.assertEqual({q.cell for q in lay.pins if q.function in ("vdd", "iovdd")}, {"sg13g2_IOPadIOVdd"})
         self.assertEqual(lay.warnings, [])
+
+    def test_core_net_on_the_pad_pin(self):
+        with with_cell("analog", pins={"pad": "ASIG5V", "analog": "ASIG5V"}):
+            lay = compac_like().layout()
+            sv = chip_top_sv(lay)
+        self.assertEqual(sv.count(".ASIG5V(ain_PAD[0])"), 1)  # one connection, not one per role
+        self.assertNotIn("ain_padres", sv)
+        self.assertIn(".ain(ain_PAD)", sv)
 
     def test_chip_top_ports(self):
         sv = chip_top_sv(compac_like(split=True).layout())

@@ -1,0 +1,126 @@
+{
+  "name": "gf180mcuD",
+  "label": "GlobalFoundries gf180mcuD",
+  "io_library": "gf180mcu_fd_io",
+  "_source": "/foss/pdks/gf180mcuD/libs.ref/gf180mcu_fd_io/lef and libs.tech/librelane/gf180mcu_fd_io/config.tcl, pad opening from the GDS (37/0)",
+  "site": 0.1,
+  "cell_width": 75.0,
+  "cell_depth": 355.0,
+  "corner": 355.0,
+  "edge_spacing": 26.0,
+  "bondpad": {
+    "w": 60.0,
+    "h": 60.0,
+    "inset": 2.0
+  },
+  "default_pitch": 100.0,
+  "core_margin": 61.0,
+  "rails": {
+    "vdd": "VDD",
+    "vss": "VSS",
+    "iovdd": "VDD",
+    "iovss": "VSS"
+  },
+  "power_pins": {
+    "vdd": "VDD",
+    "vss": "VSS",
+    "iovdd": "DVDD",
+    "iovss": "DVSS"
+  },
+  "cells": {
+    "in": {
+      "master": "gf180mcu_fd_io__in_c",
+      "pins": {
+        "pad": "PAD",
+        "in": "Y"
+      },
+      "ties": {
+        "PU": "1'b0",
+        "PD": "1'b0"
+      }
+    },
+    "out": {
+      "master": "gf180mcu_fd_io__bi_24t",
+      "drives": [
+        24
+      ],
+      "default_drive": 24,
+      "pins": {
+        "pad": "PAD",
+        "out": "A"
+      },
+      "ties": {
+        "OE": "1'b1",
+        "IE": "1'b0",
+        "CS": "1'b0",
+        "SL": "1'b0",
+        "PU": "1'b0",
+        "PD": "1'b0",
+        "Y": null
+      }
+    },
+    "tri": {
+      "master": "gf180mcu_fd_io__bi_24t",
+      "drives": [
+        24
+      ],
+      "default_drive": 24,
+      "pins": {
+        "pad": "PAD",
+        "out": "A",
+        "oe": "OE"
+      },
+      "ties": {
+        "IE": "1'b0",
+        "CS": "1'b0",
+        "SL": "1'b0",
+        "PU": "1'b0",
+        "PD": "1'b0",
+        "Y": null
+      }
+    },
+    "inout": {
+      "master": "gf180mcu_fd_io__bi_24t",
+      "drives": [
+        24
+      ],
+      "default_drive": 24,
+      "pins": {
+        "pad": "PAD",
+        "in": "Y",
+        "out": "A",
+        "oe": "OE"
+      },
+      "ties": {
+        "IE": "1'b1",
+        "CS": "1'b0",
+        "SL": "1'b0",
+        "PU": "1'b0",
+        "PD": "1'b0"
+      }
+    },
+    "analog": {
+      "master": "gf180mcu_fd_io__asig_5p0",
+      "pins": {
+        "pad": "ASIG5V",
+        "analog": "ASIG5V"
+      }
+    },
+    "vdd": {
+      "master": "gf180mcu_fd_io__dvdd",
+      "pins": {}
+    },
+    "vss": {
+      "master": "gf180mcu_fd_io__dvss",
+      "pins": {}
+    },
+    "iovdd": {
+      "master": "gf180mcu_fd_io__dvdd",
+      "pins": {}
+    },
+    "iovss": {
+      "master": "gf180mcu_fd_io__dvss",
+      "pins": {}
+    }
+  }
+}
