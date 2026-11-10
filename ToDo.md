@@ -9,21 +9,10 @@ Planned work on PREP-IC. Each item names the files it touches. Remove an item in
 - [ ] **snp2le's `CITATION.cff` fails validation.** `date-released: 2026` is no full date, so `cffconvert --validate` rejects it.
 
 
-## New PDKs: sky130A and gf180mcuD
+## New PDKs: what stays open
 
-Neither PDK fits the current profile format, which follows the IHP IO libraries: one cell width, a separate bondpad cell, one pin per supply rail and IO cells without control pins. So one more JSON file in `src/prep_ic/data/pdks/` is not enough. The profile format grows first, then the two profiles follow.
+Both profiles are in and go through `OpenROAD.PadRing` with every pad and bond pad centre as planned. No whole flow has run on either yet.
 
-The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` and the LibreLane PDK config) and the public chip templates [sky130A-ams-chip-template](https://github.com/iic-jku/sky130A-ams-chip-template) and [gf180mcuD-ams-chip-template](https://github.com/iic-jku/gf180mcuD-ams-chip-template), whose `rtl/chip_top.sv` and `flow/librelane/` hold a working pad ring of each PDK. Every number in a profile comes from the LEF, as for the IHP profiles.
-
-### Profile format (`model/pdk.py`, `model/layout.py`, `formats/librelane.py`, `gui/main_window.py`)
-
-
-### sky130A (`data/pdks/sky130a.json`)
-
-
-### gf180mcuD (`data/pdks/gf180mcud.json`)
-
-
-### After both
-
-- [ ] README: the PDK table and the IO cell table in *Supported PDKs and Packages* (the latter assumes `<lib>_IOPad*` names), the *IMPORTANT* box that names only the IHP Open PDK, the `PAD_BONDPAD_NAME` line, and the closing sentence on adding a PDK. `doc/architecture.md`: the grid note (1 µm for both IHP profiles) and *Data, not code, for technologies*.
+- [ ] **Power splits on sky130A and gf180mcuD (`data/pdks/`).** Both refuse a split with a warning, since their supply buses run through the pads and need a library cell that breaks them. Candidates to check are `sky130_ef_io__disconnect_vccd_slice_5um` and `sky130_ef_io__disconnect_vdda_slice_5um` in sky130, and `__brk2` and `__brk5` in the gf180mcu IO libraries.
+- [ ] **`gf180mcu_ocd_io` (`data/pdks/`).** The image's `libs.ref` holds only `gf180mcu_fd_io`, so the profile covers that library. `gf180mcu_ocd_io` has separate `vdd` and `vss` cells.
+- [ ] **gf180mcuD drive select (`data/pdks/gf180mcud.json`).** Only the fixed 24 mA `__bi_24t` is in the profile. `__bi_t` has the drive select pins `PDRV0` and `PDRV1`, but no file of the PDK says which value selects which current.

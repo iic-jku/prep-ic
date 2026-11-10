@@ -16,7 +16,7 @@ authors = [
 ]
 keywords = [
     "EDA", "IC design", "pad ring", "IO ring", "pinout", "floorplan", "bondplan",
-    "LibreLane", "IHP", "SG13G2", "SG13CMOS5L",
+    "LibreLane", "IHP", "SG13G2", "SG13CMOS5L", "sky130A", "gf180mcuD",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

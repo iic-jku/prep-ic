@@ -18,7 +18,7 @@ Institute for Integrated Circuits and Quantum Computing (IICQC), Johannes Kepler
 
 > [!IMPORTANT]
 > PREP-IC (GUI, CLI and Python API) runs anywhere with **Python ≥ 3.10** and **PySide6-Essentials**, see [Install](https://github.com/iic-jku/prep-ic#install) below. The CLI export and the Python API do not load Qt at all.
-> *Using* the exported files needs a **LibreLane** chip flow and the **IHP Open PDK** (SG13G2 or SG13CMOS5L). The easiest way to get both is the [IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) container.
+> *Using* the exported files needs a **LibreLane** chip flow and one of the supported PDKs (**IHP SG13G2**, **IHP SG13CMOS5L**, **sky130A** or **gf180mcuD**). The easiest way to get both is the [IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) container.
 
 
 
@@ -29,7 +29,7 @@ Institute for Integrated Circuits and Quantum Computing (IICQC), Johannes Kepler
 It works in three layers, each optional on top of the one before:
 
 - **Pad ring.** Plain-text side editors with tags for the pad type, IO function, drive strength, bond pad size and pitch, RF ground-signal-ground groups (`[gsg]`, and `[gsgsg]` for a differential pair), spacers, and power splits that cut the IO ring into domains.
-- **PDK and package.** With IHP SG13G2 or SG13CMOS5L chosen, the ring shows the real IO cells, corner cells, bondpads and seal ring spacing, and every pad gets its IO cell. A package from the EUROPRACTICE library gives every pad its package pin. See [Supported PDKs and Packages](https://github.com/iic-jku/prep-ic#supported-pdks-and-packages).
+- **PDK and package.** With a supported PDK chosen, the ring shows the real IO cells, corner cells, bondpads and seal ring spacing, and every pad gets its IO cell. A package from the EUROPRACTICE library gives every pad its package pin. See [Supported PDKs and Packages](https://github.com/iic-jku/prep-ic#supported-pdks-and-packages).
 - **Chip view.** Macros from LibreLane run directories (size and pins from their LEF) are placed in the core, with a flyline from every off-chip macro pin to its pad. Checks flag crossing flylines, split differential pairs, sensitive pads next to noisy ones, macros too close to each other and macros without a supply pad within reach. Pads and macros are dragged in the same picture, and *Optimize Pad Order*, *Add Missing Pads* and *Suggest Supply Pads* do the routine edits. See [Chip view](https://github.com/iic-jku/prep-ic#chip-view).
 
 The plan goes straight into the chip flow: the pad ring part of the LibreLane `config.yaml`, a `pad_cfg.tcl` that places the IO cells exactly as planned, a `chip_top.sv` with the IO cell instances, the matching core template, `macros.yaml` and the bondplan `PINOUT`. A pin list (CSV) and the drawing (SVG, PNG) document it.
@@ -62,6 +62,9 @@ The code is split into a pure-Python, Qt-free model and exporters (`prep_ic.mode
 ├─ 📁 examples/
 │  ├─ 📁 macros/                 abstract LEFs of four demo macros (ADC, PLL, LNA, digital core)
 │  ├─ chip_demo.json             chip view demo: IHP SG13G2, two domains, four macros, an RF input
+│  ├─ gf180mcud_demo.json        gf180mcuD ring
+│  ├─ sky130a_demo.json          sky130A ring
+│  ├─ wafer_space_slot_*.json    one project per wafer.space gf180mcuD slot
 │  ├─ ihp_sg13g2_domains.json    IHP SG13G2 ring on a fixed die, two domains, QFN32 package
 │  ├─ padring.json               pad ring without a PDK
 │  └─ script_example.py          build, check and export a pad ring in code
@@ -103,6 +106,7 @@ The code is split into a pure-Python, Qt-free model and exporters (`prep_ic.mode
 │  ├─ test_gui.py                GUI smoke tests
 │  ├─ test_model.py              entry parser, settings, die and core sizing
 │  ├─ test_pdk.py                PDK profiles, IO cells, LibreLane and bondplan exports
+│  ├─ test_pdk_lef.py            every profile against the LEF of its IO library, needs PDK_ROOT
 │  └─ test_qt_essentials.py      guards the PySide6-Essentials-only dependency
 ├─ 📁 LICENSES/                  license texts the REUSE check resolves against
 │  └─ Apache-2.0.txt
@@ -212,7 +216,7 @@ In *Settings → Technology* choose a PDK (IHP SG13G2 or SG13CMOS5L) and optiona
   - `chip_core_template.sv`: the matching core ports, and with macros the instances to create in the core,
   - `macros.yaml` (with macros): `MACROS` with LEF and GDS, the `vh`, `nl`, `pnl`, `lib` and `spef` views found in LibreLane's layout below `final/`, and the instance locations (`i_chip_core.<instance>`),
   - `bondplan_pinout.yaml` (with a package): `PACKAGE_NAME` and `PINOUT` for the bondplan config.
-- The design must still provide the bondpad cell (`PAD_BONDPAD_NAME`, e.g. `sg13g2_ip__bondpad_70x70` with `EXTRA_LEFS` and `EXTRA_GDS`), as in any IHP chip.
+- An IHP design must still provide the bondpad cell (`PAD_BONDPAD_NAME`, e.g. `sg13g2_ip__bondpad_70x70` with `EXTRA_LEFS` and `EXTRA_GDS`). The IO cells of sky130A and gf180mcuD carry their own bond pad.
 
 See [`examples/ihp_sg13g2_domains.json`](https://github.com/iic-jku/prep-ic/blob/main/examples/ihp_sg13g2_domains.json). From the command line:
 
@@ -311,34 +315,41 @@ The `export` options combine, e.g. `prep-ic export chip.json --csv pins.csv --sv
 
 ## Supported PDKs and Packages
 
-The PDK profiles are taken from the IO cell LEF and the LibreLane IO config of the [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK) (`libs.ref/<io_library>/lef/` and `libs.tech/librelane/<io_library>/config.tcl`).
+The PDK profiles are taken from the IO cell LEF and the LibreLane IO config of each PDK (`libs.ref/<io_library>/lef/` and `libs.tech/librelane/<io_library>/config.tcl`).
 
-| | IHP SG13G2 | IHP SG13CMOS5L |
-|---|---|---|
-| Profile name | `ihp-sg13g2` | `ihp-sg13cmos5l` |
-| IO library | `sg13g2_io` | `sg13cmos5l_io` |
-| IO cell (width × depth) | 80 × 180 µm | 80 × 180 µm |
-| Corner cell | 180 × 180 µm | 180 × 180 µm |
-| Bondpad | 70 × 70 µm | 70 × 70 µm |
-| Seal ring spacing | 140 µm | 140 µm |
-| Minimum pad pitch (IO cell width) | 80 µm | 80 µm |
-| Core margin (core power ring) | 45 µm | 45 µm |
-| Power split gap and filler | 10 µm, `sg13g2_Filler2000` | 10 µm, `sg13cmos5l_Filler2000` |
+| | IHP SG13G2 | IHP SG13CMOS5L | sky130A | gf180mcuD |
+|---|---|---|---|---|
+| Profile name | `ihp-sg13g2` | `ihp-sg13cmos5l` | `sky130A` | `gf180mcuD` |
+| IO library | `sg13g2_io` | `sg13cmos5l_io` | `sky130_ef_io` | `gf180mcu_fd_io` |
+| IO cell (width × depth) | 80 × 180 µm | 80 × 180 µm | 80 × 198 µm GPIO, 75 × 198 µm supply, 75 × 200 µm analog | 75 × 350 µm |
+| Corner cell | 180 × 180 µm | 180 × 180 µm | 200 × 204 µm | 355 × 355 µm |
+| Bond pad | 70 × 70 µm, a separate cell | 70 × 70 µm, a separate cell | in the IO cell, 62.6 × 62.45 µm GPIO | in the IO cell, 60 × 60 µm |
+| Seal ring spacing | 140 µm | 140 µm | 0 (added after the ring) | 26 µm |
+| Minimum pad pitch (IO cell width) | 80 µm | 80 µm | 80 µm | 75 µm |
+| Core margin (core power ring) | 45 µm | 45 µm | 100 µm | 61 µm |
+| Power split gap and filler | 10 µm, `sg13g2_Filler2000` | 10 µm, `sg13cmos5l_Filler2000` | none, a split gets a warning | none, a split gets a warning |
 
 A new project starts standard pads at the minimum pitch and RF pads at 100 µm. Selecting a PDK in the GUI raises a pitch below the minimum to 100 µm.
 
-The IO function of a pad selects its cell (`<lib>` is `sg13g2` or `sg13cmos5l`):
+The IO function of a pad selects its cell (`<lib>` is `sg13g2` or `sg13cmos5l`, the sky130A cells start with `sky130_ef_io__`, the gf180mcuD ones with `gf180mcu_fd_io__`):
 
-| Function | IO cell | Drive |
-|---|---|---|
-| `[in]` | `<lib>_IOPadIn` | |
-| `[out]` | `<lib>_IOPadOut<drive>mA` | 4, 16 or 30 mA, default 30 mA |
-| `[tri]` | `<lib>_IOPadTriOut<drive>mA` | 4, 16 or 30 mA, default 30 mA |
-| `[io]` | `<lib>_IOPadInOut<drive>mA` | 4, 16 or 30 mA, default 30 mA |
-| `[analog]` | `<lib>_IOPadAnalog` | |
-| `[vdd]`, `[vss]` | `<lib>_IOPadVdd`, `<lib>_IOPadVss` (core supply) | |
-| `[iovdd]`, `[iovss]` | `<lib>_IOPadIOVdd`, `<lib>_IOPadIOVss` (IO supply) | |
-| `[none]` | no IO cell | |
+| Function | IHP | sky130A | gf180mcuD |
+|---|---|---|---|
+| `[in]` | `<lib>_IOPadIn` | `gpiov2_pad` | `in_c`, with `[schmitt]` `in_s` |
+| `[out]` | `<lib>_IOPadOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
+| `[tri]` | `<lib>_IOPadTriOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
+| `[io]` | `<lib>_IOPadInOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
+| `[analog]` | `<lib>_IOPadAnalog` | `analog_esd_pad`, with `[noesd]` `analog_noesd_pad` | `asig_5p0` |
+| `[vdd]`, `[vss]` | `<lib>_IOPadVdd`, `<lib>_IOPadVss` | `vccd_lvc_clamped_pad`, `vssd_lvc_clamped_pad` | `dvdd`, `dvss` |
+| `[iovdd]`, `[iovss]` | `<lib>_IOPadIOVdd`, `<lib>_IOPadIOVss` | `vddio_hvc_clamped_pad`, `vssio_hvc_clamped_pad` | `dvdd`, `dvss` |
+| `[none]` | no IO cell | no IO cell | no IO cell |
+| Drive | 4, 16 or 30 mA, default 30 mA | none, a drive tag gets a warning | 24 mA, another drive gets a warning |
+
+The control pins of the sky130A and gf180mcuD cells are tied per function in `chip_top.sv`, so the core ports are the same as for IHP.
+
+On sky130A, PREP-IC adds two 20 µm connect cells in front of the first IO supply pad. They tie `VCCHIB` to `VCCD`, `VSWITCH` and `VDDA` to `VDDIO`, and `VSSA` to `VSSIO`, and that side grows by 40 µm. On gf180mcuD, the `dvdd` and `dvss` pads short their two supply rings, so the IO supply and the core supply are one net (`VDD`, `VSS`).
+
+[`examples/`](https://github.com/iic-jku/prep-ic/tree/main/examples) has one project per wafer.space gf180mcuD slot (`wafer_space_slot_*.json`) with the die of the slot, its pad order and the supply pads locked. Name your signals and save it under a new name.
 
 The 25 packages are named after the cells of the EUROPRACTICE package library (`EP_PACKAGES_08022018.gds`). Their pins are numbered counter-clockwise, seen from the top.
 
@@ -350,7 +361,7 @@ The 25 packages are named after the cells of the EUROPRACTICE package library (`
 | SOIC | 16, 20, 24, 28 | top of the left side |
 | DIL | 16, 24, 28, 40, 48 | top of the left side |
 
-A further PDK is one more JSON file in `src/prep_ic/data/pdks/`, a further package one more entry in `src/prep_ic/data/packages.json`.
+A further PDK is one more JSON file in `src/prep_ic/data/pdks/`, with the fields of `model/pdk.py`, a further package one more entry in `src/prep_ic/data/packages.json`.
 
 
 ## Cite This Work
@@ -369,7 +380,7 @@ A further PDK is one more JSON file in `src/prep_ic/data/pdks/`, a further packa
 
 ## Acknowledgements
 
-- The IO cell profiles and the LibreLane pad ring files follow the IO libraries and the LibreLane integration of the [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK).
+- The IO cell profiles and the LibreLane pad ring files follow the IO libraries and the LibreLane integration of the [IHP Open PDK](https://github.com/IHP-GmbH/IHP-Open-PDK), sky130A and gf180mcuD, and the ring wiring of the public chip templates [sky130A-ams-chip-template](https://github.com/iic-jku/sky130A-ams-chip-template) and [gf180mcuD-ams-chip-template](https://github.com/iic-jku/gf180mcuD-ams-chip-template).
 - The exports are made for the `Chip` flow of [LibreLane](https://github.com/librelane/librelane).
 - The package names and pin counts come from the [EUROPRACTICE](https://europractice-ic.com) package library.
 

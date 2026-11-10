@@ -17,9 +17,9 @@ A `Project` holds the settings, the entry lines of each side and the `floorplan`
 
 - **Units and coordinates.** µm everywhere. The model has its origin at the top-left of the die with y pointing down. LEF files (origin lower-left, y up) are converted when read. The pin list and every LibreLane file use the origin at the lower-left of the die.
 - **Two line orders.** `project.sides` holds each side in numbering order (counter-clockwise or clockwise). The side editors and every chip view edit use the physical order, top and bottom from left to right, left and right from top to bottom. `physical_lines`, `set_physical_lines` and `physical_line_index` convert between the two.
-- **Grid.** With a PDK the pitches, pad positions and a fixed die snap to the PDK placement site (1 µm for both IHP profiles).
+- **Grid.** With a PDK the pitches, pad positions and a fixed die snap to the PDK placement site (1 µm for the IHP profiles and sky130A, 0.1 µm for gf180mcuD).
 - **Old files stay readable.** New project keys are optional and `from_dict` falls back to the defaults. `tests/data/layout_baseline.json` pins die size, margin and pin geometry of reference projects, so a layout change shows up as a failing test.
-- **Data, not code, for technologies.** A PDK profile is one JSON file in `data/pdks/` (read by `model/pdk.py`), a package one entry in `data/packages.json`.
+- **Data, not code, for technologies.** A PDK profile is one JSON file in `data/pdks/` (read by `model/pdk.py`), a package one entry in `data/packages.json`. A profile holds the ring geometry, the rails, how a power split is made (a PDK without one refuses splits), ring cells that are no pads, and per function the IO cell with its width, bond pad, supply pins, tied control pins, polarity and variants. `tests/test_pdk_lef.py` compares every profile with its LEF when `PDK_ROOT` is set.
 
 ## Die size
 
