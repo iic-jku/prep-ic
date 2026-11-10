@@ -18,7 +18,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 ### Profile format (`model/pdk.py`, `model/layout.py`, `formats/librelane.py`, `gui/main_window.py`)
 
 - [ ] **Ring cells that are not pads.** The sky130 ring needs the 20 µm connect slices `sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um` and `sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um`. The model knows pads, spacers and the split filler only. Such cells take room on a side, so they belong in the layout and the die size, in the `PAD_*` lists and in `chip_top.sv`.
-- [ ] **Drive strength per PDK.** The tags `[4mA]`, `[16mA]` and `[30mA]` select IHP masters. The sky130 GPIO pad has no drive variants (it has `SLOW` and the `DM` modes). gf180mcu has the fixed 24 mA cell `__bi_24t` that the template uses, and `__bi_t` with the drive select pins `PDRV0` and `PDRV1`, to check against the LEF. A tag the PDK cannot honor gets a warning.
 
 ### sky130A (`data/pdks/sky130a.json`)
 
@@ -30,7 +29,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 ### gf180mcuD (`data/pdks/gf180mcud.json`)
 
 - [ ] **wafer.space slots.** A chip for a wafer.space gf180mcu run goes into one of four fixed slots, each with a fixed die, pad count and pad order (`flow/librelane/slots/slot_*.yaml` in the template, e.g. `DIE_AREA: [0, 0, 3932, 5122]` for `slot_1x1`). A slot preset (fixed die, locked supply pads, open signal slots) lets the planner assign the signals to a slot instead of growing the die.
-- [ ] Example project, baseline entry and tests as for sky130A.
 
 ### After both
 
