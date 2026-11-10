@@ -17,7 +17,6 @@ The references are the IO libraries of each PDK (`libs.ref/<io_library>/lef/` an
 
 ### Profile format (`model/pdk.py`, `model/layout.py`, `formats/librelane.py`, `gui/main_window.py`)
 
-- [ ] **Ring cells that are not pads.** The sky130 ring needs the 20 µm connect slices `sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um` and `sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um`. The model knows pads, spacers and the split filler only. Such cells take room on a side, so they belong in the layout and the die size, in the `PAD_*` lists and in `chip_top.sv`.
 
 ### sky130A (`data/pdks/sky130a.json`)
 

@@ -42,6 +42,7 @@ class Pdk:
     split_filler: Optional[str]  # filler master with the width of split_gap
     power_pins: Dict[str, object]  # rail kind to a pin or a list of pins, a cell may name its own "power_pins"
     cells: Dict[str, dict]
+    ring_cells: tuple = ()     # cells the ring needs that are not pads: name, master, width, power_pins
     rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
     bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
 
@@ -116,7 +117,7 @@ def _pdks():
             default_pitch=d["default_pitch"], core_margin=d["core_margin"],
             split_gap=(d.get("split") or {}).get("gap"), split_filler=(d.get("split") or {}).get("filler"),
             power_pins=d["power_pins"], cells=d["cells"],
-            bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
+            ring_cells=tuple(d.get("ring_cells", ())), bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
     return out
 
 
