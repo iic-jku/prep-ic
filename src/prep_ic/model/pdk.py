@@ -42,6 +42,7 @@ class Pdk:
     split_filler: Optional[str]  # filler master with the width of split_gap
     power_pins: Dict[str, object]  # rail kind to a pin or a list of pins, a cell may name its own "power_pins"
     cells: Dict[str, dict]
+    bondpad_default_shift: float = 0.0  # the bond pad of a cell may sit off its centre along the row
     ring_cells: tuple = ()     # cells the ring needs that are not pads: name, master, width, power_pins
     rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
     bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
@@ -64,6 +65,11 @@ class Pdk:
         """``(w, h, inset)`` of the bond pad of a function, ``inset`` as in ``bondpad_inset``."""
         own = self.cells.get(function, {}).get("bondpad", {})
         return own.get("w", self.bondpad_w), own.get("h", self.bondpad_h), own.get("inset", self.bondpad_inset)
+
+    def bondpad_shift(self, function):
+        """Bond pad centre minus cell centre along the row, in die coordinates (x or y upward)."""
+        own = self.cells.get(function, {}).get("bondpad", {})
+        return own.get("shift", self.bondpad_default_shift)
 
     def drives(self, function):
         return list(self.cells.get(function, {}).get("drives", []))
@@ -117,7 +123,7 @@ def _pdks():
             default_pitch=d["default_pitch"], core_margin=d["core_margin"],
             split_gap=(d.get("split") or {}).get("gap"), split_filler=(d.get("split") or {}).get("filler"),
             power_pins=d["power_pins"], cells=d["cells"],
-            ring_cells=tuple(d.get("ring_cells", ())), bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
+            bondpad_default_shift=d["bondpad"].get("shift", 0.0), ring_cells=tuple(d.get("ring_cells", ())), bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
     return out
 
 

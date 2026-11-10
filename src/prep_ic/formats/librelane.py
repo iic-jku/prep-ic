@@ -162,7 +162,7 @@ def pad_cfg_tcl(layout, source=""):
     W, Hh, H = layout.die_width, layout.die_height, layout.ring_depth
 
     def low(p):  # lower/left edge of the IO cell along its row, die coordinates (origin lower-left)
-        return (p.x if p.side in "TB" else p.y) - pdk.width_of(p.function) / 2
+        return (p.x if p.side in "TB" else p.y) - pdk.bondpad_shift(p.function) - pdk.width_of(p.function) / 2
 
     def gap_low(sp):
         if sp.side in "TB":

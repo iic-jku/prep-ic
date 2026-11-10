@@ -127,6 +127,21 @@ class PdkGeometry(unittest.TestCase):
                 out = next(p for p in lay.pins if p.name == "out[8]")
                 self.assertEqual((out.w, out.h), (60.0, 60.0))
 
+    def test_bondpad_off_centre_along_the_cell(self):
+        def centres(cell_fields):
+            with with_profile(bondpad_inset=2.0, bondpad_w=60.0, bondpad_h=60.0), with_cell("out", **cell_fields):
+                return {q.name: (q.x, q.y) for q in compac_like().layout().pins}
+        plain, shifted = centres({}), centres({"bondpad": {"shift": -2.5}})
+        for name, side_axis in (("out[0]", 0), ("out[8]", 1)):  # bottom side along x, left side along y
+            self.assertEqual(shifted[name][side_axis], plain[name][side_axis] - 2.5, name)
+            self.assertEqual(shifted[name][1 - side_axis], plain[name][1 - side_axis], name)
+
+    def test_cell_position_ignores_the_bondpad_shift(self):
+        def tcl(cell_fields):
+            with with_profile(bondpad_inset=2.0, bondpad_w=60.0, bondpad_h=60.0), with_cell("out", **cell_fields):
+                return pad_cfg_tcl(compac_like().layout())
+        self.assertEqual(tcl({"bondpad": {"shift": -2.5}}), tcl({}))
+
     def test_separate_bondpad_stays_between_seal_ring_and_cell(self):
         lay = compac_like().layout()
         self.assertEqual(next(p for p in lay.pins if p.name == "out[0]").y, 105)
@@ -299,6 +314,58 @@ class RingCells(unittest.TestCase):
 
     def test_no_ring_cells_for_a_profile_without_them(self):
         self.assertEqual(compac_like().layout().ring_cells, [])
+
+
+class Sky130A(unittest.TestCase):
+    def project(self):
+        p = prep.Project(sides={"L": ["clk [in]", "o [out]", "t [tri]", "bi [io]"], "T": ["ain [analog]", "bare [analog] [noesd]"], "R": [],
+                                "B": ["VDD", "VSS", "IOVDD", "IOVSS"]})
+        p.settings.pdk, p.settings.std.pitch = "sky130A", 100
+        return p
+
+    def test_geometry_from_the_lef(self):
+        pdk = pdk_model.get_pdk("sky130A")
+        self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.cell_depth), ("sky130_ef_io", 1.0, 80.0, 200.0))
+        self.assertEqual((pdk.width_of("inout"), pdk.width_of("vdd"), pdk.width_of("analog")), (80.0, 75.0, 75.0))
+
+    def test_cells(self):
+        lay = self.project().layout()
+        cells = {q.name: q.cell for q in lay.pins}
+        self.assertEqual({cells["clk"], cells["o"], cells["t"], cells["bi"]}, {"sky130_ef_io__gpiov2_pad"})
+        self.assertEqual(cells["ain"], "sky130_ef_io__analog_esd_pad")
+        self.assertEqual(cells["bare"], "sky130_ef_io__analog_noesd_pad")
+        self.assertEqual(cells["VDD"], "sky130_ef_io__vccd_lvc_clamped_pad")
+        self.assertEqual(lay.warnings, [])
+
+    def test_gpio_bond_pad_is_off_centre_in_its_cell(self):
+        lay = self.project().layout()
+        pdk = pdk_model.get_pdk("sky130A")
+        self.assertEqual((pdk.bondpad_shift("out"), pdk.bondpad_shift("vdd")), (-2.5, 0.03))
+        clk = lay.pins[0]  # left side, the row runs along y
+        self.assertEqual(clk.y % 1, 0.5 if (clk.y + 2.5 - 40) % 1 == 0.5 else clk.y % 1)
+
+    def test_the_connect_slices_are_added(self):
+        lay = self.project().layout()
+        self.assertEqual(len(lay.ring_cells), 2)
+        self.assertEqual({r.b - r.a for r in lay.ring_cells}, {20.0})
+
+    def test_chip_top(self):
+        sv = chip_top_sv(self.project().layout())
+        for conn in (".OE_N(~bi_c2p_en)", ".OE_N(~t_c2p_en)", ".DM(3'b001)", ".DM(3'b110)", ".HLD_H_N(pad_clk_TIE_HI_ESD)",
+                     ".ENABLE_INP_H(pad_clk_TIE_LO_ESD)", ".VCCHIB(VDD)", ".VSWITCH(IOVDD)", ".VCCD_PAD(VDD)", ".P_CORE(ain_padres)"):
+            self.assertIn(conn, sv)
+        self.assertIn("wire pad_clk_TIE_HI_ESD;", sv)
+        self.assertIn("sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um", sv)
+
+    def test_no_drive_variants(self):
+        p = self.project()
+        p.sides["L"][1] = "o [out] [4mA]"
+        self.assertIn("Drive strength ignored for pin 2 o (out)", p.layout().warnings)
+
+    def test_splits_are_refused(self):
+        p = self.project()
+        p.sides["B"] = ["=== ANA"] + p.sides["B"]
+        self.assertEqual(p.layout().splits, [])
 
 
 class Packaging(unittest.TestCase):

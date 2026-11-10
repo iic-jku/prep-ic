@@ -306,8 +306,9 @@ def build_layout(project, selected=None):
         return pdk.edge_spacing - p["h"] if own is None else pdk.edge_spacing + own
 
     def pad_rect(p):
-        c = p["c"]
         w, h, s, ins = p["w"], p["h"], p["side"], inset(p)
+        shift = pdk.bondpad_shift(p["function"]) if pdk else 0.0
+        c = p["c"] + (shift if s in "TB" else -shift)  # the left and right sides run with y downward here
         if s == "T":
             return H + c - w / 2, ins, w, h
         if s == "B":
