@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from ..model.project import Project
+from ..model.project import Project, load_problems
 
 
 def load(path):
@@ -23,7 +23,7 @@ def load(path):
     for m in project.floorplan.macros:  # macro paths are stored relative to the project file
         if m.path and not Path(m.path).is_absolute():
             m.path = os.path.normpath(base / m.path)
-    project.load_warnings = project.floorplan.reload()
+    project.load_warnings = load_problems(data) + project.floorplan.reload()
     return project
 
 

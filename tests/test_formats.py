@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Maximilian Golser and Simon Dorrer
 # SPDX-License-Identifier: Apache-2.0
 import csv
+import json
 import os
 import shutil
 import subprocess
@@ -178,6 +179,51 @@ class CommandLine(unittest.TestCase):
             r = self.run_cli("check", str(path), PYTHONIOENCODING="ascii")
         self.assertEqual(r.returncode, 1, r.stderr)
         self.assertIn("Unknown tag or option in pad name: \\xc4 [foo]", r.stdout)
+
+    def test_check_reports_a_macro_the_loader_dropped(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "chip.json")
+            path.write_text('{"sides": {"L": "A"}, "floorplan": {"macros": [{"name": "adc0", "io": null}]}}', encoding="utf-8")
+            r = self.run_cli("check", str(path))
+        self.assertEqual(r.returncode, 1, r.stderr)
+        self.assertIn("Macro entry 1 (adc0) could not be read and was dropped", r.stdout)
+
+
+class LoadProblems(unittest.TestCase):
+    """What the loader leaves out of a hand-edited file has to show up as a finding."""
+
+    MACRO = {"name": "a", "cache": {"name": "a", "w": 100, "h": 100}}
+
+    def warnings(self, data):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "chip.json")
+            path.write_text(json.dumps(data), encoding="utf-8")
+            return prep.load(path)
+
+    def test_dropped_macro_entries(self):
+        cases = {"io null": ([{**self.MACRO, "io": None}], "Macro entry 1 (a) could not be read and was dropped"),
+                 "no name": ([{"cache": self.MACRO["cache"]}], "Macro entry 1 could not be read and was dropped"),
+                 "not an object": ([3], "Macro entry 1 could not be read and was dropped"),
+                 "second of two": ([self.MACRO, {**self.MACRO, "name": "b", "io": 3}],
+                                   "Macro entry 2 (b) could not be read and was dropped")}
+        for label, (macros, expected) in cases.items():
+            p = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": macros}})
+            self.assertEqual(p.load_warnings, [expected], label)
+        self.assertEqual([m.name for m in p.floorplan.macros], ["a"])  # the good one stays
+
+    def test_floorplan_that_is_no_object(self):
+        self.assertEqual(self.warnings({"sides": {"L": "A"}, "floorplan": 3}).load_warnings,
+                         ["The floorplan could not be read, its macros were dropped"])
+
+    def test_unknown_side_key(self):
+        p = self.warnings({"sides": {"l": "A", "L": "B"}})
+        self.assertEqual(p.load_warnings, ['Unknown side "l" ignored, expected T, R, B or L'])
+        self.assertEqual(p.sides["L"], ["B"])
+
+    def test_clean_files_have_no_load_problems(self):
+        for data in ({"sides": {"L": "A"}}, {"sides": {"L": "A"}, "floorplan": None}, {"sides": {}, "floorplan": {}},
+                     {"sides": {"L": "A"}, "floorplan": {"macros": [self.MACRO]}}):
+            self.assertEqual(self.warnings(data).load_warnings, [], data)
 
 
 class NoQtOutsideGui(unittest.TestCase):
