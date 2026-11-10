@@ -247,6 +247,60 @@ class Gf180mcuD(unittest.TestCase):
         self.assertFalse(any("mA" in w for w in p.layout().warnings))
 
 
+RING_CELLS = ({"name": "conn_a", "master": "slice_a", "width": 20.0, "power_pins": {"vdd": ["VCCHIB", "VCCD"], "iovdd": "VDDIO"}},
+              {"name": "conn_b", "master": "slice_b", "width": 20.0, "power_pins": {"iovss": ["VSSA", "VSSIO"]}})
+
+
+class RingCells(unittest.TestCase):
+    def test_placed_before_the_first_io_supply_pad(self):
+        with with_profile(ring_cells=RING_CELLS):
+            lay = compac_like().layout()
+        self.assertEqual([(r.name, r.side) for r in lay.ring_cells], [("conn_a", "L"), ("conn_b", "L")])
+        iovdd = next(q for q in lay.pins if q.name == "IOVDD" and q.side == "L")
+        a, b = lay.ring_cells
+        self.assertEqual((a.b - a.a, a.b, b.b), (20.0, b.a, iovdd.a))  # adjacent, right before the pad
+        self.assertEqual(lay.warnings, [])
+
+    def test_the_side_grows_by_their_width(self):
+        def side(**fields):
+            with with_profile(**fields):
+                p = compac_like()
+                p.settings.fixed_die = False
+                return p.layout().side_length["L"]
+        self.assertEqual(side(ring_cells=RING_CELLS) - side(ring_cells=()), 40.0)
+
+    def test_editor_and_pin_numbers_do_not_change(self):
+        before = compac_like().layout()
+        with with_profile(ring_cells=RING_CELLS):
+            p = compac_like()
+            lay = p.layout()
+        self.assertEqual(lay.gutter, before.gutter)
+        self.assertEqual([q.no for q in lay.pins], [q.no for q in before.pins])
+        self.assertEqual(p.sides, compac_like().sides)  # nothing is written into the project
+
+    def test_exports(self):
+        with with_profile(ring_cells=RING_CELLS):
+            lay = compac_like().layout()
+            west = config_yaml(lay).split("PAD_WEST: [")[1].split("\n]")[0]
+            tcl, sv = pad_cfg_tcl(lay), chip_top_sv(lay)
+        self.assertLess(west.index('"pad_IOVDD'), west.index('"conn_b"'))  # the list runs bottom to top, the numbering down
+        a = lay.ring_cells[0]
+        self.assertIn(f"{{IO_WEST conn_a {lay.die_height - (lay.ring_depth + a.b):g}}}", tcl)
+        self.assertIn("slice_a conn_a (", sv)
+        for conn in (".VCCHIB(VDD)", ".VCCD(VDD)", ".VDDIO(IOVDD)", ".VSSA(IOVSS)"):
+            self.assertIn(conn, sv)
+
+    def test_no_io_supply_pad_no_ring_cells(self):
+        with with_profile(ring_cells=RING_CELLS):
+            p = compac_like()
+            for side in "TRBL":
+                p.sides[side] = [line for line in p.sides[side] if "IOVDD" not in line]
+            self.assertEqual(p.layout().ring_cells, [])
+
+    def test_no_ring_cells_for_a_profile_without_them(self):
+        self.assertEqual(compac_like().layout().ring_cells, [])
+
+
 class Packaging(unittest.TestCase):
     def test_qfn_one_to_one(self):
         p = compac_like(package="OP_QFN32_A4_FIT")

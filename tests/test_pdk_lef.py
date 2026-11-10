@@ -48,6 +48,9 @@ class ProfilesAgainstLef(unittest.TestCase):
             macros = self.macros(pdk)
             if not macros:  # this PDK is not installed
                 continue
+            for ring in pdk.ring_cells:
+                with self.subTest(pdk=name, ring=ring["name"]):
+                    self.assertEqual(macros[ring["master"]][0], ring["width"])
             for function, cell in pdk.cells.items():
                 for master in masters(cell):
                     with self.subTest(pdk=name, master=master):

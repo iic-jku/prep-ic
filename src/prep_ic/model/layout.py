@@ -55,6 +55,16 @@ class Pin:
 
 
 @dataclass
+class RingCell:
+    """A cell of the IO ring that is no pad, as the sky130 connect slices."""
+    side: str
+    a: float           # along the side
+    b: float
+    master: str
+    name: str
+
+
+@dataclass
 class Split:
     side: str
     line: int
@@ -87,6 +97,7 @@ class Layout:
     domains: List[str] = field(default_factory=list)   # power domains in numbering order
     splits: List[Split] = field(default_factory=list)
     unbonded_leads: List[int] = field(default_factory=list)
+    ring_cells: List[RingCell] = field(default_factory=list)
     rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
 
     @property
@@ -99,6 +110,16 @@ class Layout:
     def rail(self, function, domain):
         """Net name of a power rail (``vdd``…) in a domain."""
         return self.rails[function] + (f"_{domain}" if domain else "")
+
+
+def _add_ring_cells(sides, mode, ring_cells):
+    """Puts the ring cells a PDK needs in front of the first IO supply pad in numbering order."""
+    for s in ORDER[mode]:
+        for i, e in enumerate(sides[s]):
+            if any(p["function"] == "iovdd" for p in e["pads"]):
+                sides[s][i:i] = [{"line": e["line"], "blank": True, "ring": c, "pads": [], "width": c["width"], "group": None}
+                                 for c in ring_cells]
+                return
 
 
 def _snap(v, grid):
@@ -165,6 +186,8 @@ def build_layout(project, selected=None):
     if sized:
         warnings.append("Custom pad size ignored with a PDK (bondpad of the PDK used) for " + ", ".join(sized))
 
+    if pdk and pdk.ring_cells:
+        _add_ring_cells(sides, mode, pdk.ring_cells)
     S = {s: sum(e["width"] for e in sides[s]) for s in SIDES}
     if cfg.fixed_die:
         dw, dh = cfg.die_width, cfg.die_height
@@ -194,7 +217,7 @@ def build_layout(project, selected=None):
     space = {s: e_tb if s in "TB" else e_lr for s in SIDES}
 
     # Numbering and positions along the sides; ring_seq walks the ring in numbering order
-    pins, no, ring_seq, splits = [], 0, [], []
+    pins, no, ring_seq, splits, ring_cells = [], 0, [], [], []
     for s in ORDER[mode]:
         E = e_tb if s in "TB" else e_lr
         cur = (E - S[s]) / 2 if align == "center" else 0.0
@@ -224,6 +247,11 @@ def build_layout(project, selected=None):
                     sp = Split(s, e["line"], e["split"], a, b)
                     splits.append(sp)
                     ring_seq.append(sp)
+                if "ring" in e:
+                    a, b = cur, cur + e["width"]
+                    if REV[mode][s]:
+                        a, b = E - b, E - a
+                    ring_cells.append(RingCell(s, a, b, e["ring"]["master"], e["ring"]["name"]))
                 cur += e["width"]
 
     # Power domains: a split starts the domain named in its line; the ring is closed, so the
@@ -339,6 +367,10 @@ def build_layout(project, selected=None):
                 cw = pdk.width_of(p["function"])
                 x, y, w, h = cell_rect(p["side"], c - cw / 2, c + cw / 2, d0)
                 add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=f"{p['side']}:{p['line']}"))
+
+    for rc in ring_cells:
+        x, y, w, h = cell_rect(rc.side, rc.a, rc.b, d0)
+        add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=""))
 
     # Power splits: gap in the IO ring and the name of the domain that follows
     for sp in splits:
@@ -472,6 +504,8 @@ def build_layout(project, selected=None):
     for s in SIDES:
         lab = []
         for e in sides[s]:
+            if "ring" in e:  # no line of the editor
+                continue
             if e["blank"] or not e["pads"]:
                 lab.append("===" if "split" in e else "")
             elif len(e["pads"]) == 1:
@@ -493,5 +527,5 @@ def build_layout(project, selected=None):
                   core_limited=cfg.fixed_core and not cfg.fixed_die,
                   core_margin=pdk.core_margin if pdk else 0.0,
                   ring_depth=H, pdk=pdk.name if pdk else "", package=pkg.name if pkg else "",
-                  domains=domains, splits=splits, unbonded_leads=unbonded,
+                  domains=domains, splits=splits, unbonded_leads=unbonded, ring_cells=ring_cells,
                   rails=dict(pdk.rails) if pdk else dict(RAILS))
