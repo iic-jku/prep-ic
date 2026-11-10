@@ -11,7 +11,7 @@ from tests import ROOT  # noqa: F401  (sets the import path)
 
 import prep_ic as prep
 from prep_ic.model import pdk as pdk_model
-from prep_ic.formats.librelane import (bondplan_yaml, chip_top_sv, config_yaml, librelane_files,
+from prep_ic.formats.librelane import (bondplan_yaml, chip_core_template_sv, chip_top_sv, config_yaml, librelane_files,
                                                pad_cfg_tcl)
 from prep_ic.model.parse import format_entry, infer_function, parse_line
 
@@ -213,6 +213,21 @@ class LibreLaneOutput(unittest.TestCase):
         self.assertIn(".DVDD(IOVDD)", block)
         self.assertNotIn(".vdd(", block)  # this cell has no pin for the core supply
         self.assertIn(".vdd(VDD)", sv)  # the others keep the PDK-wide map
+
+    def test_tied_control_pins(self):
+        ties = {"DM": "3'b110", "IN_H": None, "HLD_H_N": "@TIE_HI_ESD", "TIE_HI_ESD": "@TIE_HI_ESD"}
+        with with_cell("inout", ties=ties):
+            sv = chip_top_sv(compac_like().layout())
+        block = sv[sv.index("sg13g2_IOPadInOut4mA pad_bidir_0 "):].split(");")[0]
+        for conn in (".DM(3'b110)", ".IN_H()", ".HLD_H_N(pad_bidir_0_TIE_HI_ESD)", ".TIE_HI_ESD(pad_bidir_0_TIE_HI_ESD)",
+                     ".c2p_en(bidir_c2p_en[0])"):
+            self.assertIn(conn, block)
+        self.assertEqual(sv.count("wire pad_bidir_0_TIE_HI_ESD;"), 1)
+
+    def test_core_ports_do_not_change_with_ties(self):
+        base = chip_core_template_sv(compac_like().layout())
+        with with_cell("inout", ties={"CS": "1'b0"}):
+            self.assertEqual(chip_core_template_sv(compac_like().layout()), base)
 
     def test_chip_top_ports(self):
         sv = chip_top_sv(compac_like(split=True).layout())
