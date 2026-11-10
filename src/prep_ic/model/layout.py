@@ -43,6 +43,7 @@ class Pin:
     y: float
     function: str = "none"   # IO function, see constants.FUNCTIONS
     drive: Optional[int] = None
+    variant: Optional[str] = None
     cell: str = ""           # IO cell master (with a PDK)
     domain: str = ""         # power domain ("" = single domain)
     package_pin: Optional[int] = None
@@ -249,10 +250,12 @@ def build_layout(project, selected=None):
     for p in pins:
         p["cell"] = ""
         if pdk:
-            c = pdk.cell(p["function"], p["drive"])
+            c = pdk.cell(p["function"], p["drive"], p["variant"])
             if c:
                 p["cell"] = c[0]
                 p["w"], p["h"] = pdk.bondpad_of(p["function"])[:2]
+                if p["variant"] and p["variant"] not in pdk.cells[p["function"]].get("variants", {}):
+                    warnings.append(f"Variant {p['variant']} ignored for pin {p['no']} {p['name']} ({p['function']})")
                 if p["drive"] and not pdk.drives(p["function"]):
                     warnings.append(f"Drive strength ignored for pin {p['no']} {p['name']} ({p['function']})")
                 elif p["drive"] and p["drive"] not in pdk.drives(p["function"]):
@@ -481,7 +484,7 @@ def build_layout(project, selected=None):
     pin_objs = [Pin(no=p["no"], name=p["name"], type=p["type"], side=p["side"], line=p["line"],
                     w=p["w"], h=p["h"], pitch=p["pitch"], grouped=p["grouped"], a=p["a"], b=p["b"],
                     cx=p["cx"], cy=p["cy"], x=p["cx"], y=Hh - p["cy"], function=p["function"],
-                    drive=p["drive"], cell=p["cell"], domain=p["domain"],
+                    drive=p["drive"], variant=p["variant"], cell=p["cell"], domain=p["domain"],
                     package_pin=p.get("package_pin")) for p in pins]
     per_side = {s: sum(len(e["pads"]) for e in sides[s]) for s in SIDES}
     return Layout(pins=pin_objs, die_width=W, die_height=Hh, core_width=core_w, core_height=core_h,

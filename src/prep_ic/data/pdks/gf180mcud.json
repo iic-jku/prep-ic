@@ -30,6 +30,11 @@
   "cells": {
     "in": {
       "master": "gf180mcu_fd_io__in_c",
+      "variants": {
+        "schmitt": {
+          "master": "gf180mcu_fd_io__in_s"
+        }
+      },
       "pins": {
         "pad": "PAD",
         "in": "Y"

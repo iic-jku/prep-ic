@@ -29,6 +29,7 @@ FUNCTION_NAMES = {"in": "Input", "out": "Output", "tri": "Tristate output", "ino
                   "iovss": "IO ground", "none": "No IO cell"}
 FUNCTION_TAGS = {"in": "in", "out": "out", "tri": "tri", "io": "inout", "inout": "inout", "analog": "analog",
                  "vdd": "vdd", "vss": "vss", "iovdd": "iovdd", "iovss": "iovss", "none": "none"}
+VARIANT_TAGS = ("schmitt", "noesd")  # a tag that picks another IO cell of the same function, if the PDK has one
 POWER_FUNCTIONS = ("vdd", "vss", "iovdd", "iovss")
 # Rail names of the IO ring; with power domains they get a "_<domain>" suffix
 RAILS = {"vdd": "VDD", "vss": "VSS", "iovdd": "IOVDD", "iovss": "IOVSS"}
