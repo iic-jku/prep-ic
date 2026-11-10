@@ -144,10 +144,9 @@ def pad_cfg_tcl(layout, source=""):
     pdk = _require_pdk(layout)
     names = PadNames(layout)
     W, Hh, H = layout.die_width, layout.die_height, layout.ring_depth
-    cw = pdk.cell_width
 
     def low(p):  # lower/left edge of the IO cell along its row, die coordinates (origin lower-left)
-        return p.x - cw / 2 if p.side in "TB" else p.y - cw / 2
+        return (p.x if p.side in "TB" else p.y) - pdk.width_of(p.function) / 2
 
     def gap_low(sp):
         if sp.side in "TB":

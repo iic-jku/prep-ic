@@ -28,7 +28,7 @@ class Pdk:
     label: str
     io_library: str
     site: float                # placement grid along the edge in µm
-    cell_width: float          # IO cell size along the edge
+    cell_width: float          # widest IO cell along the edge, a cell may name its own "width"
     cell_depth: float
     corner: float              # corner cell size (square)
     edge_spacing: float        # die edge to IO cells (PAD_EDGE_SPACING, seal ring)
@@ -45,6 +45,10 @@ class Pdk:
     def ring_depth(self):
         """Die edge to the inner edge of the IO cells."""
         return self.edge_spacing + self.cell_depth
+
+    def width_of(self, function):
+        """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
+        return self.cells.get(function, {}).get("width", self.cell_width)
 
     def drives(self, function):
         return list(self.cells.get(function, {}).get("drives", []))
