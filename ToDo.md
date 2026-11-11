@@ -3,12 +3,6 @@
 Planned work on PREP-IC. Each item names the files it touches. Remove an item in the commit that finishes it.
 
 
-## Other repos
-
-- [ ] **snp2le has the same PySide6 dependency (`pyproject.toml`).** It declares `PySide6-Essentials>=6.6` and Python 3.10 with no limit for Linux. Four of its GUI test files (25 tests) pass on Linux with Python 3.10 and PySide6 6.12.0, and it calls neither of the two `QFont` setters measured here, but other calls and a long session were not measured.
-- [ ] **snp2le's `CITATION.cff` fails validation.** `date-released: 2026` is no full date, so `cffconvert --validate` rejects it.
-
-
 ## New PDKs: what stays open
 
 Both profiles are in and go through `OpenROAD.PadRing` with every pad and bond pad centre as planned. No whole flow has run on either yet.
