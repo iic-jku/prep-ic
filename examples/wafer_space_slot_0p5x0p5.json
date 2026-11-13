@@ -28,9 +28,9 @@
   "max_supply_dist": 1000.0,
   "format": 2,
   "sides": {
-    "T": "bidir[22] [io] @106.7\nbidir[23] [io] @106.7\nbidir[24] [io] @106.7\nbidir[25] [io] @106.7\nbidir[26] [io] @106.7\nanalog[0] [analog] @106.7\nanalog[1] [analog] @106.7\nDVDD [iovdd] [lock] @106.7\nDVSS [iovss] [lock] @106.7\nanalog[2] [analog] @106.7\nanalog[3] [analog] @106.7",
-    "R": "bidir[7] [io] @104\nbidir[8] [io] @104\nbidir[9] [io] @104\nbidir[10] [io] @104\nbidir[11] [io] @104\nbidir[12] [io] @104\nbidir[13] [io] @104\nbidir[14] [io] @104\nDVSS [iovss] [lock] @104\nDVDD [iovdd] [lock] @104\nbidir[15] [io] @104\nbidir[16] [io] @104\nbidir[17] [io] @104\nbidir[18] [io] @104\nbidir[19] [io] @104\nbidir[20] [io] @104\nbidir[21] [io] @104",
-    "B": "clk [in] [schmitt] @106.7\nrst_n [in] @106.7\nDVSS [iovss] [lock] @106.7\nDVDD [iovdd] [lock] @106.7\nbidir[0] [io] @106.7\nbidir[1] [io] @106.7\nbidir[2] [io] @106.7\nbidir[3] [io] @106.7\nbidir[4] [io] @106.7\nbidir[5] [io] @106.7\nbidir[6] [io] @106.7",
-    "L": "input[0] [in] @104\ninput[1] [in] @104\nVDD [vdd] [lock] @104\nVSS [vss] [lock] @104\ninput[2] [in] @104\ninput[3] [in] @104\nbidir[27] [io] @104\nbidir[28] [io] @104\nbidir[29] [io] @104\nbidir[30] [io] @104\nbidir[31] [io] @104\nbidir[32] [io] @104\nbidir[33] [io] @104\nbidir[34] [io] @104\nbidir[35] [io] @104\nbidir[36] [io] @104\nbidir[37] [io] @104"
+    "T": "bidir[22] [io] @104\nbidir[23] [io] @104\nbidir[24] [io] @104\nbidir[25] [io] @104\nbidir[26] [io] @104\nanalog[0] [analog] @104\nanalog[1] [analog] @104\nDVDD [iovdd] [lock] @104\nDVSS [iovss] [lock] @104\nanalog[2] [analog] @104\nanalog[3] [analog] @104",
+    "R": "bidir[7] [io] @102\nbidir[8] [io] @102\nbidir[9] [io] @102\nbidir[10] [io] @102\nbidir[11] [io] @102\nbidir[12] [io] @102\nbidir[13] [io] @102\nbidir[14] [io] @102\nDVSS [iovss] [lock] @102\nDVDD [iovdd] [lock] @102\nbidir[15] [io] @102\nbidir[16] [io] @102\nbidir[17] [io] @102\nbidir[18] [io] @102\nbidir[19] [io] @102\nbidir[20] [io] @102\nbidir[21] [io] @102",
+    "B": "clk [in] [schmitt] @104\nrst_n [in] @104\nDVSS [iovss] [lock] @104\nDVDD [iovdd] [lock] @104\nbidir[0] [io] @104\nbidir[1] [io] @104\nbidir[2] [io] @104\nbidir[3] [io] @104\nbidir[4] [io] @104\nbidir[5] [io] @104\nbidir[6] [io] @104",
+    "L": "input[0] [in] @102\ninput[1] [in] @102\nVDD [vdd] [lock] @102\nVSS [vss] [lock] @102\ninput[2] [in] @102\ninput[3] [in] @102\nbidir[27] [io] @102\nbidir[28] [io] @102\nbidir[29] [io] @102\nbidir[30] [io] @102\nbidir[31] [io] @102\nbidir[32] [io] @102\nbidir[33] [io] @102\nbidir[34] [io] @102\nbidir[35] [io] @102\nbidir[36] [io] @102\nbidir[37] [io] @102"
   }
 }
