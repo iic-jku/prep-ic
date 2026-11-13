@@ -76,31 +76,32 @@ def parse_line(line):
         return {"split": True, "domain": t.strip("= \t")}
     typ = size = pitch = group = function = drive = variant = None
     lock = False
+    # read from the right: a second tag or option of one kind ends the reading and stays in the name, a finding
     while True:
         m = SIZE_RE.search(t)
-        if m and m.start() > 0 and num(m.group(1), 0) and num(m.group(2), 0):  # else it stays in the name, a finding
+        if m and m.start() > 0 and num(m.group(1), 0) and num(m.group(2), 0) and size is None:  # else it stays in the name
             size = (num(m.group(1), 1), num(m.group(2), 1))
             t = t[:m.start()]
             continue
         m = PITCH_RE.search(t)
-        if m and m.start() > 0 and num(m.group(1), 0):
+        if m and m.start() > 0 and num(m.group(1), 0) and pitch is None:
             pitch = num(m.group(1), 1)
             t = t[:m.start()]
             continue
         m = TAG_RE.search(t)
         if m and m.start() > 0:
             k = m.group(1).lower()
-            if k in TAGS:
+            if k in TAGS and typ is None:
                 typ = TAGS[k]
-            elif k in GROUPS:
+            elif k in GROUPS and group is None:
                 group = k
-            elif k in FUNCTION_TAGS:
+            elif k in FUNCTION_TAGS and function is None:
                 function = FUNCTION_TAGS[k]
-            elif k in VARIANT_TAGS:
+            elif k in VARIANT_TAGS and variant is None:
                 variant = k
-            elif k == "lock":
+            elif k == "lock" and not lock:
                 lock = True
-            elif DRIVE_RE.fullmatch(k) and int(DRIVE_RE.fullmatch(k).group(1)):
+            elif DRIVE_RE.fullmatch(k) and int(DRIVE_RE.fullmatch(k).group(1)) and drive is None:
                 drive = int(DRIVE_RE.fullmatch(k).group(1))
             else:
                 break  # e.g. bus name D[3] stays part of the name
