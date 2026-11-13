@@ -155,6 +155,19 @@ def config_yaml(layout, source=""):
     if skip:  # a comment: a key here would replace the user's own list (logos, ID cells)
         out += ["# LibreLane's disconnected pin check has to skip these IO cells. Add them to",
                 "# IGNORE_DISCONNECTED_MODULES in your config.yaml:"] + [f"# - {m}" for m in skip] + [""]
+    ips = {}
+    for p in layout.pins:
+        spec = pdk.spec(p.function, p.variant) if p.cell else {}
+        if "ip" in spec:
+            ips[spec["master"]] = spec["ip"]
+    for master, ip in sorted(ips.items()):
+        views = ip["dir"] + "/final"
+        out += [f"# {master} is no cell of the PDK: it is {ip['dir']} of {ip['source']}.",
+                "# pad_cfg.tcl places it. Add its views to config.yaml as the IP's README says, next to the IO library's:",
+                f"# - PAD_LEFS: {views}/lef/{master}.lef",
+                f"# - PAD_VERILOG_MODELS: {views}/vh/{master}.vh",
+                f"# - EXTRA_GDS: {views}/gds/{master}.gds",
+                f"# - LIB: {views}/lib/{master}.lib in every corner, not EXTRA_LIBS, where Yosys loses its power ports", ""]
     for n in names.notes:
         out.append(f"# Note: {n}")
     return "\n".join(out).rstrip() + "\n"

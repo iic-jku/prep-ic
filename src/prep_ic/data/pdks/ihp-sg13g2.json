@@ -79,6 +79,20 @@
       "pins": {
         "pad": "pad",
         "analog": "padres"
+      },
+      "variants": {
+        "rfpad": {
+          "master": "sg13g2_ip__rfpad_70x70",
+          "pins": {
+            "pad": "pad",
+            "analog": "padbare"
+          },
+          "own_bondpad": true,
+          "ip": {
+            "dir": "ip/sg13g2_ip__rfpad_70x70",
+            "source": "https://github.com/iic-jku/ihp-sg13g2-ams-chip-template"
+          }
+        }
       }
     },
     "vdd": {

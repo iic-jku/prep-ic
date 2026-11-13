@@ -401,6 +401,57 @@ class RingCells(unittest.TestCase):
         self.assertEqual(compac_like().layout().ring_cells, [])
 
 
+class IhpRfPad(unittest.TestCase):
+    """The RF pad of the IHP chip templates: one cell with its own bond pad and no series resistor."""
+
+    def project(self, pdk="ihp-sg13g2"):
+        p = prep.Project(sides={"L": ["RF [gsg] [rfpad]", "ain [analog]", "VDD", "VSS"], "T": ["LO [analog] [rfpad]"], "R": [],
+                                "B": ["IOVDD", "IOVSS"]})
+        p.settings.pdk, p.settings.std.pitch = pdk, 100
+        return p
+
+    def test_cells(self):
+        for pdk, lib in (("ihp-sg13g2", "sg13g2"), ("ihp-sg13cmos5l", "sg13cmos5l")):
+            lay = self.project(pdk).layout()
+            cells = {q.name: q.cell for q in lay.pins}
+            self.assertEqual((cells["RF"], cells["LO"]), (f"{lib}_ip__rfpad_70x70",) * 2, pdk)
+            self.assertEqual((cells["GND"], cells["ain"]), (f"{lib}_IOPadVss", f"{lib}_IOPadAnalog"), pdk)
+            self.assertEqual(lay.warnings, [], pdk)
+
+    def test_bond_pad_stays_where_the_bondpad_goes(self):
+        lay = self.project().layout()
+        rf, ain = (next(q for q in lay.pins if q.name == n) for n in ("RF", "ain"))
+        self.assertEqual((rf.x, ain.x), (105.0, 105.0))  # left side: 140 um seal ring spacing less half the 70 um pad
+
+    def test_export(self):
+        lay = self.project().layout()
+        sv, tcl, cfg = chip_top_sv(lay), pad_cfg_tcl(lay), config_yaml(lay)
+        lo = re.search(r"sg13g2_ip__rfpad_70x70 pad_LO \((.*?)\);", sv, re.S).group(1)
+        self.assertEqual(set(re.findall(r"\.(\w+)\(", lo)), {"pad", "padbare", "vdd", "vss", "iovdd", "iovss"})
+        self.assertIn(".pad(LO_PAD)", lo)
+        self.assertIn("{IO_NORTH pad_LO pad {iovdd iovss vdd vss}}", tcl)
+        for entry in ("PAD_LEFS", "PAD_VERILOG_MODELS", "EXTRA_GDS", "LIB"):
+            self.assertRegex(cfg, rf"(?m)^# - {entry}: ip/sg13g2_ip__rfpad_70x70/final/")
+        self.assertIn("https://github.com/iic-jku/ihp-sg13g2-ams-chip-template", cfg)
+        self.assertNotRegex(cfg, r"(?m)^(PAD_LEFS|PAD_VERILOG_MODELS|EXTRA_GDS|LIB):")  # comments, the user's lists stay
+        plain = prep.Project(sides={"L": ["ain [analog]", "VDD", "VSS", "IOVDD", "IOVSS"], "T": [], "R": [], "B": []})
+        plain.settings.pdk = "ihp-sg13g2"
+        self.assertNotIn("rfpad", config_yaml(plain.layout()))
+
+    def test_only_ihp_has_it(self):
+        p = self.project()
+        p.settings.pdk = "sky130A"
+        self.assertIn("Variant rfpad ignored for pin 2 RF (analog)", p.layout().warnings)
+        p = self.project()
+        p.sides["T"] = ["clk [in] [rfpad]"]
+        self.assertTrue(any(w.startswith("Variant rfpad ignored") and "clk (in)" in w for w in p.layout().warnings))
+
+    def test_tag_round_trip(self):
+        e = parse_line("LO [analog] [rfpad]")
+        self.assertEqual((e["name"], e["variant"]), ("LO", "rfpad"))
+        self.assertEqual(format_entry(e), "LO [analog] [rfpad]")
+
+
 class Sky130A(unittest.TestCase):
     def project(self):
         p = prep.Project(sides={"L": ["clk [in]", "o [out]", "t [tri]", "bi [io]"], "T": ["ain [analog]", "bare [analog] [noesd]"], "R": [],
