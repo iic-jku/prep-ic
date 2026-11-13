@@ -176,6 +176,34 @@ class Floorplan:
         return cls(_read_macros(d)[0])
 
 
+def _valid(v, positive=False):
+    """True if :func:`_f` reads ``v`` as what it says, a finite number (and above 0 if ``positive``)."""
+    if isinstance(v, bool) or _f(v, None) is None:
+        return False
+    return _f(v) > 0 if positive else True
+
+
+def _bad_fields(d) -> List[str]:
+    """Fields of a macro entry that load with a default or a size that cannot be meant."""
+    bad = [k for k in ("x", "y") if k in d and not _valid(d[k])]
+    if "rot" in d and not (_valid(d["rot"]) and _f(d["rot"]) % 90 == 0):
+        bad.append("rot")
+    if d.get("halo") is not None and not _valid(d["halo"]):
+        bad.append("halo")
+    if "class" in d and d["class"] not in MACRO_CLASSES:
+        bad.append("class")
+    c = d.get("cache")
+    if c is not None and not isinstance(c, dict):
+        bad.append("cache")
+    elif isinstance(c, dict):
+        bad += [f"cache {k}" for k in ("w", "h") if not _valid(c.get(k), positive=True)]
+        pins = c.get("pins", [])
+        if not isinstance(pins, list) or not all(isinstance(q, dict) and _valid(q.get("x")) and _valid(q.get("y"))
+                                                 for q in pins):
+            bad.append("cache pins")
+    return bad
+
+
 def _read_macros(d):
     """The macros of a floorplan dict, and a warning for each part of it that had to be dropped."""
     if d is not None and not isinstance(d, dict):
@@ -184,6 +212,9 @@ def _read_macros(d):
     for i, m in enumerate((d or {}).get("macros", []), 1):
         try:
             macros.append(Macro.from_dict(m))
+            bad = _bad_fields(m)
+            if bad:
+                warnings.append(f"Macro {macros[-1].name}: {', '.join(bad)} not valid in the project file")
         except (KeyError, TypeError, AttributeError, ValueError):
             name = m.get("name") if isinstance(m, dict) else None
             warnings.append(f"Macro entry {i}" + (f" ({name})" if name else "") + " could not be read and was dropped")

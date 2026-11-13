@@ -259,8 +259,20 @@ class LoadProblems(unittest.TestCase):
 
     def test_macro_position_that_is_no_finite_number_is_zero(self):
         macro = {**self.MACRO, "x": 1e999, "y": float("nan"), "rot": 1e999}
-        m = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [macro]}}).floorplan.macros[0]
+        p = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [macro]}})
+        m = p.floorplan.macros[0]
         self.assertEqual((m.x, m.y, m.rot), (0.0, 0.0, 0))
+        self.assertEqual(p.load_warnings, ["Macro a: x, y, rot not valid in the project file"])
+
+    def test_macro_fields_that_load_as_defaults_are_findings(self):
+        bad = {"name": "a", "x": "far", "halo": "big", "rot": 45, "class": "loud",
+               "cache": {"name": "a", "w": "wide", "h": -5, "pins": [{"name": "p", "x": "left", "y": 1}]}}
+        p = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [bad]}})
+        self.assertEqual(p.load_warnings, ["Macro a: x, rot, halo, class, cache w, cache h, cache pins not valid in the project file"])
+        self.assertIn(p.load_warnings[0], prep.findings(p))
+        negative = {"name": "b", "cache": {"name": "b", "w": -50, "h": -50}}
+        self.assertEqual(self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [negative]}}).load_warnings,
+                         ["Macro b: cache w, cache h not valid in the project file"])
 
     def test_clean_files_have_no_load_problems(self):
         for data in ({"sides": {"L": "A"}}, {"sides": {"L": "A"}, "floorplan": None}, {"sides": {}, "floorplan": {}},
