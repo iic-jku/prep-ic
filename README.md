@@ -349,7 +349,7 @@ The control pins of the sky130A and gf180mcuD cells are tied per function in `ch
 
 On sky130A, PREP-IC adds two 20 µm connect cells in front of the first IO supply pad. They tie `VCCHIB` to `VCCD`, `VSWITCH` and `VDDA` to `VDDIO`, and `VSSA` to `VSSIO`, and that side grows by 40 µm. On gf180mcuD, the `dvdd` and `dvss` pads short their two supply rings, so the IO supply and the core supply are one net (`VDD`, `VSS`).
 
-[`examples/`](https://github.com/iic-jku/prep-ic/tree/main/examples) has one project per wafer.space gf180mcuD slot (`wafer_space_slot_*.json`) with the die of the slot, its pad order and the supply pads locked. Name your signals and save it under a new name.
+[`examples/`](https://github.com/iic-jku/prep-ic/tree/main/examples) has one project per wafer.space gf180mcuD slot (`wafer_space_slot_*.json`) with the die of the slot, its pad order and positions, and the supply pads locked. Name your signals and save it under a new name. Three slots put an analog pad next to a digital one, which `prep-ic check` reports as `Sensitive pad next to noisy pad`.
 
 The 25 packages are named after the cells of the EUROPRACTICE package library (`EP_PACKAGES_08022018.gds`). Their pins are numbered counter-clockwise, seen from the top.
 

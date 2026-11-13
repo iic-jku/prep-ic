@@ -416,6 +416,26 @@ class Sky130A(unittest.TestCase):
 class WaferSpaceSlots(unittest.TestCase):
     SLOTS = {"0p5x0p5": (1936, 2531, 56), "0p5x1": (1936, 5122, 72), "1x0p5": (3932, 2531, 72), "1x1": (3932, 5122, 74)}
 
+    def test_pads_spread_as_the_template_ring_spreads_them(self):
+        # LibreLane's ring leaves equal gaps between the 75 um cells, floored to 1 um, and splits the rest between both ends
+        for slot in self.SLOTS:
+            lay = prep.load(ROOT / "examples" / f"wafer_space_slot_{slot}.json").layout()
+            for s in "TRBL":
+                with self.subTest(slot=slot, side=s):
+                    lows = sorted(round((q.x if s in "TB" else q.y) - 37.5, 3) for q in lay.pins if q.side == s)
+                    n, space = len(lows), lay.side_space[s]
+                    g = (space - 75 * n) // (n + 1)
+                    first = 381 + g + (space - 75 * n - (n + 1) * g) / 2
+                    self.assertEqual(lows, [round(first + i * (g + 75), 3) for i in range(n)])
+
+    def test_findings_are_those_of_the_template_pad_order(self):
+        # three slots put an analog pad next to a digital one, which check reports as a planning hint
+        expected = {"0p5x0p5": ["Sensitive pad next to noisy pad: analog[0] – bidir[26]"], "0p5x1": [],
+                    "1x0p5": ["Sensitive pad next to noisy pad: analog[3] – input[0]"],
+                    "1x1": ["Sensitive pad next to noisy pad: analog[0] – bidir[39]"]}
+        for slot, found in expected.items():
+            self.assertEqual(prep.findings(prep.load(ROOT / "examples" / f"wafer_space_slot_{slot}.json")), found, slot)
+
     def test_every_slot(self):
         for slot, (w, h, pads) in self.SLOTS.items():
             with self.subTest(slot):
