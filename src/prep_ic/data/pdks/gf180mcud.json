@@ -113,19 +113,39 @@
     },
     "vdd": {
       "master": "gf180mcu_fd_io__dvdd",
-      "pins": {}
+      "pins": {},
+      "power_pins": {
+        "vss": "VSS",
+        "iovdd": "DVDD",
+        "iovss": "DVSS"
+      }
     },
     "vss": {
       "master": "gf180mcu_fd_io__dvss",
-      "pins": {}
+      "pins": {},
+      "power_pins": {
+        "vdd": "VDD",
+        "iovdd": "DVDD",
+        "iovss": "DVSS"
+      }
     },
     "iovdd": {
       "master": "gf180mcu_fd_io__dvdd",
-      "pins": {}
+      "pins": {},
+      "power_pins": {
+        "vss": "VSS",
+        "iovdd": "DVDD",
+        "iovss": "DVSS"
+      }
     },
     "iovss": {
       "master": "gf180mcu_fd_io__dvss",
-      "pins": {}
+      "pins": {},
+      "power_pins": {
+        "vdd": "VDD",
+        "iovdd": "DVDD",
+        "iovss": "DVSS"
+      }
     }
   }
 }
