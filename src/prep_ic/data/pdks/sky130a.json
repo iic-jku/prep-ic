@@ -6,7 +6,10 @@
   "site": 1.0,
   "cell_width": 80.0,
   "cell_depth": 200.0,
-  "corner": 200.0,
+  "corner": [
+    200.0,
+    204.0
+  ],
   "edge_spacing": 0.0,
   "bondpad": {
     "w": 62.6,

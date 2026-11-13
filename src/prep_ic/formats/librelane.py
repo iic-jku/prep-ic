@@ -88,7 +88,8 @@ def _row_pins(layout, side):
 
 def _ring_low(layout, rc):
     """Lower/left edge of a ring cell along its row, die coordinates (origin lower-left)."""
-    return layout.ring_depth + rc.a if rc.side in "TB" else layout.die_height - (layout.ring_depth + rc.b)
+    start = layout.start(rc.side)
+    return start + rc.a if rc.side in "TB" else layout.die_height - (start + rc.b)
 
 
 def _row_entries(layout, side, names):
@@ -159,15 +160,15 @@ def config_yaml(layout, source=""):
 def pad_cfg_tcl(layout, source=""):
     pdk = _require_pdk(layout)
     names = PadNames(layout)
-    W, Hh, H = layout.die_width, layout.die_height, layout.ring_depth
+    Hh = layout.die_height
 
     def low(p):  # lower/left edge of the IO cell along its row, die coordinates (origin lower-left)
         return (p.x if p.side in "TB" else p.y) - pdk.bondpad_shift(p.function) - pdk.width_of(p.function) / 2
 
     def gap_low(sp):
         if sp.side in "TB":
-            return H + sp.a
-        return Hh - (H + sp.b)
+            return layout.start(sp.side) + sp.a
+        return Hh - (layout.start(sp.side) + sp.b)
 
     pads = [(ROWS[s][1], names.inst[p.no], low(p)) for s in ROW_ORDER for p in _row_pins(layout, s)]
     pads += [(ROWS[rc.side][1], rc.name, _ring_low(layout, rc)) for rc in layout.ring_cells]

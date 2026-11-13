@@ -32,7 +32,7 @@ class Pdk:
     site: float                # placement grid along the edge in µm
     cell_width: float          # widest IO cell along the edge, a cell may name its own "width"
     cell_depth: float
-    corner: float              # corner cell size (square)
+    corner: Tuple[float, float]  # corner cell extent along x and along y in die coordinates
     edge_spacing: float        # die edge to IO cells (PAD_EDGE_SPACING, seal ring)
     bondpad_w: float           # default bond pad, a cell may name its own "bondpad"
     bondpad_h: float
@@ -51,6 +51,10 @@ class Pdk:
     def ring_depth(self):
         """Die edge to the inner edge of the IO cells."""
         return self.edge_spacing + self.cell_depth
+
+    def row_start(self, side):
+        """Die edge to where the IO cells of a side begin: past the corner cell, which may be taller than wide."""
+        return self.edge_spacing + self.corner[0 if side in "TB" else 1]
 
     def width_of(self, function):
         """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
@@ -111,6 +115,11 @@ class Package:
         return {s: [p for run in reversed(r) for p in run] for s, r in runs.items()}
 
 
+def _pair(v):
+    """A square size given as one number, or ``[x, y]``."""
+    return (float(v), float(v)) if isinstance(v, (int, float)) else (float(v[0]), float(v[1]))
+
+
 @lru_cache(maxsize=None)
 def _pdks():
     out = {}
@@ -118,7 +127,7 @@ def _pdks():
         d = json.loads(path.read_text(encoding="utf-8"))
         out[d["name"]] = Pdk(
             name=d["name"], label=d["label"], io_library=d["io_library"], site=d["site"],
-            cell_width=d["cell_width"], cell_depth=d["cell_depth"], corner=d["corner"],
+            cell_width=d["cell_width"], cell_depth=d["cell_depth"], corner=_pair(d["corner"]),
             edge_spacing=d["edge_spacing"], bondpad_w=d["bondpad"]["w"], bondpad_h=d["bondpad"]["h"],
             default_pitch=d["default_pitch"], core_margin=d["core_margin"],
             split_gap=(d.get("split") or {}).get("gap"), split_filler=(d.get("split") or {}).get("filler"),

@@ -223,7 +223,7 @@ class Gf180mcuD(unittest.TestCase):
 
     def test_geometry_from_the_lef(self):
         pdk = pdk_model.get_pdk("gf180mcuD")
-        self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.corner, pdk.edge_spacing), ("gf180mcu_fd_io", 0.1, 75.0, 355.0, 26.0))
+        self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.corner, pdk.edge_spacing), ("gf180mcu_fd_io", 0.1, 75.0, (355.0, 355.0), 26.0))
         self.assertEqual((pdk.bondpad_w, pdk.bondpad_h), (60.0, 60.0))
 
     def test_cells_and_rails(self):
@@ -327,6 +327,32 @@ class Sky130A(unittest.TestCase):
         pdk = pdk_model.get_pdk("sky130A")
         self.assertEqual((pdk.io_library, pdk.site, pdk.cell_width, pdk.cell_depth), ("sky130_ef_io", 1.0, 80.0, 200.0))
         self.assertEqual((pdk.width_of("inout"), pdk.width_of("vdd"), pdk.width_of("analog")), (80.0, 75.0, 75.0))
+
+    def test_left_and_right_rows_start_after_the_taller_corner(self):
+        # the corner cell is 200 x 204 um, so OpenROAD starts the bottom and top rows at x 200
+        # and the left and right rows at y 204
+        self.assertEqual(pdk_model.get_pdk("sky130A").corner, (200.0, 204.0))
+        p = prep.Project(sides={"L": ["a [in] @80", "b [in] @80"], "B": ["c [in] @80", "d [in] @80"], "R": [], "T": []})
+        p.settings.pdk, p.settings.align = "sky130A", "start"
+        lay = p.layout()
+        pins = {q.name: q for q in lay.pins}
+        self.assertEqual(pins["a"].y + 2.5 + 40, lay.die_height - 204)  # top of the left row, bond pad 2.5 um below the cell centre
+        self.assertEqual(pins["c"].x + 2.5 - 40, 200)                    # start of the bottom row
+        tcl = pad_cfg_tcl(lay)
+        self.assertIn(f"{{IO_WEST pad_a {lay.die_height - 204 - 80:g}}}", tcl)
+        self.assertIn("{IO_SOUTH pad_c 200}", tcl)
+
+    def test_fixed_die_left_and_right_sides_have_8_um_less_room(self):
+        p = self.project()
+        p.settings.fixed_die, p.settings.die_width, p.settings.die_height = True, 1240, 1240
+        lay = p.layout()
+        self.assertEqual(lay.side_space, {"T": 840.0, "B": 840.0, "L": 832.0, "R": 832.0})
+        self.assertEqual((lay.die_width, lay.die_height), (1240.0, 1240.0))
+
+    def test_square_die_stays_square(self):
+        lay = self.project().layout()
+        self.assertEqual(lay.die_width, lay.die_height)
+        self.assertEqual(lay.side_space["T"] - lay.side_space["L"], 8.0)
 
     def test_cells(self):
         lay = self.project().layout()
