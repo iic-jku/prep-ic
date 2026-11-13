@@ -205,6 +205,16 @@ class SplitPerPdk(unittest.TestCase):
         with with_profile(split_gap=None, split_filler=None):
             lay = compac_like(split=True).layout()
         self.assertEqual(len(lay.gutter["R"]), 8)
+        split_lines = [i for i, line in enumerate(compac_like(split=True).physical_lines("R")) if line.startswith("===")]
+        self.assertTrue(split_lines)
+        for i in split_lines:  # the editor still shows the line as a split, not as a spacer
+            self.assertEqual(lay.gutter["R"][i], "===")
+
+    def test_refused_split_without_a_name_reads_as_a_split(self):
+        p = prep.Project(sides={"L": ["===", "A", "=== "], "T": [], "R": [], "B": []})
+        p.settings.pdk = "gf180mcuD"
+        self.assertIn("Power split ===, === ignored: GlobalFoundries gf180mcuD has no split mechanism in its profile",
+                      p.layout().warnings)
 
     def test_the_ihp_profiles_keep_their_split(self):
         for name in ("ihp-sg13g2", "ihp-sg13cmos5l"):
