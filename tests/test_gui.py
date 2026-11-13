@@ -46,6 +46,25 @@ class GuiSmoke(unittest.TestCase):
         self.assertEqual(self.win.table.rowCount(), len(self.win.layout_data.pins))
         self.assertEqual(self.win.editors["T"].text(), "\n".join(expected.physical_lines("T")))
 
+    def test_reload_macros_keeps_what_the_file_dropped(self):
+        import json
+        path = Path(self.tmp.name) / "dropped.json"
+        path.write_text(json.dumps({"sides": {"L": "A"}, "floorplan": {"macros": [{"name": "m", "io": None}]}}), encoding="utf-8")
+        win = main_window.MainWindow(PALETTES["light"], path)
+        try:
+            dropped = "Macro entry 1 (m) could not be read and was dropped"
+            self.assertIn(dropped, win.fp_warnings)
+            win.reload_macros()  # F5
+            self.assertIn(dropped, win.fp_warnings)
+            win.editors["L"].set_text("A\nB")
+            win.render()
+            win._apply(win.get_project())  # an edit through the chip view keeps it too
+            win.reload_macros()
+            self.assertIn(dropped, win.fp_warnings)
+        finally:
+            win.setWindowModified(False)
+            win.close()
+
     def test_editors_show_physical_order(self):
         # ccw: left 1–14 top → bottom, top numbered right → left, so its editor starts at 40
         self.assertEqual(self.win.editors["L"].edit.labels[:3], ["1", "2", "3"])

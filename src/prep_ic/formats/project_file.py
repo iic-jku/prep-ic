@@ -23,7 +23,8 @@ def load(path):
     for m in project.floorplan.macros:  # macro paths are stored relative to the project file
         if m.path and not Path(m.path).is_absolute():
             m.path = os.path.normpath(base / m.path)
-    project.load_warnings = load_problems(data) + project.floorplan.reload()
+    project.file_problems = load_problems(data)
+    project.load_warnings = project.file_problems + project.floorplan.reload()
     return project
 
 
