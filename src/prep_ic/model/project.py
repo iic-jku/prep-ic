@@ -8,7 +8,7 @@ import copy
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from .constants import EXAMPLE, ORDER, REV, SIDES
+from .constants import ALIGNS, EXAMPLE, ORDER, REV, SIDES
 from .floorplan import Floorplan, dropped_entries
 from .parse import num, split_lines
 
@@ -62,7 +62,7 @@ class Settings:
         def pads(p, d):
             return PadSettings(num(p.pitch, d.pitch), num(p.w, d.w), num(p.h, d.h))
 
-        return Settings(self.mode if self.mode in ORDER else "ccw", self.align, bool(self.square),
+        return Settings(_choice(self.mode, ORDER, "ccw"), _choice(self.align, ALIGNS, "center"), bool(self.square),
                         num(self.cell_height, 120.0), pads(self.std, d_std), pads(self.rf, d_rf),
                         bool(self.fixed_die), num(self.die_width, 2000.0), num(self.die_height, 2000.0),
                         str(self.pdk or ""), str(self.package or ""), bool(self.fixed_core),
@@ -170,8 +170,8 @@ class Project:
     def from_dict(cls, data):
         st = normalize_state(data)
         settings = Settings(
-            mode=st["mode"] if st["mode"] in ORDER else "ccw",
-            align=st["align"],
+            mode=_choice(st["mode"], ORDER, "ccw"),
+            align=_choice(st["align"], ALIGNS, "center"),
             square=bool(st["square"]),
             cell_height=num(st["cellh"], 120.0),
             std=PadSettings(*(num(st["std"][f], d) for f, d in zip(("pitch", "w", "h"), (80.0, 60.0, 60.0)))),
@@ -192,12 +192,34 @@ class Project:
         )
         # Before format 2, empty lines at the end of a side were ignored; drop them to keep the layout
         lines = text_to_lines if num(st["format"], 1) >= 2 else split_lines
-        return cls(settings, {s: lines(str(st["sides"][s] or "")) for s in SIDES},
+        return cls(settings, {s: lines(_side_text(st["sides"][s])) for s in SIDES},
                    Floorplan.from_dict(st["floorplan"]))
 
 
 def default_state():
     return Project().to_dict()
+
+
+def _choice(v, choices, default):
+    return v if isinstance(v, str) and v in choices else default
+
+
+def _is_lines(v):
+    """A side as a file holds it: one text with a line per entry, or a list of those lines."""
+    return v is None or isinstance(v, str) or isinstance(v, (list, tuple)) and all(isinstance(x, str) for x in v)
+
+
+def _side_text(v):
+    if isinstance(v, (list, tuple)) and _is_lines(v):
+        return "\n".join(v)
+    return str(v or "")
+
+
+def _bad_choices(data) -> List[str]:
+    """Settings with a choice :meth:`Project.from_dict` replaced by its default."""
+    return [f"Setting {k} is no valid choice ({data[k]!r}), using {default}"
+            for k, choices, default in (("mode", ORDER, "ccw"), ("align", ALIGNS, "center"))
+            if k in data and _choice(data[k], choices, None) is None]
 
 
 def _bad_numbers(data) -> List[str]:
@@ -214,7 +236,9 @@ def _bad_numbers(data) -> List[str]:
 def load_problems(data) -> List[str]:
     """Warnings for what :meth:`Project.from_dict` leaves out of ``data`` without an error."""
     unknown = [f'Unknown side "{s}" ignored, expected T, R, B or L' for s in data["sides"] if s not in SIDES]
-    return unknown + dropped_entries(data.get("floorplan")) + _bad_numbers(data)
+    texts = [f"Side {s} is no text ({v!r}), read as one line" for s, v in data["sides"].items()
+             if s in SIDES and not _is_lines(v)]
+    return unknown + texts + dropped_entries(data.get("floorplan")) + _bad_numbers(data) + _bad_choices(data)
 
 
 def normalize_state(st):
