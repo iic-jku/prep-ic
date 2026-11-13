@@ -20,6 +20,16 @@ def _print(text):
         print(text.encode(encoding, "backslashreplace").decode(encoding))
 
 
+def _inform(text):
+    """``_print`` for a line nobody has to read: a closed output ends the lines, not the command."""
+    try:
+        _print(text)
+        if sys.stdout is not None:
+            sys.stdout.flush()
+    except (OSError, ValueError):
+        sys.stdout = None  # the flush at exit would fail too and turn the exit code into 120
+
+
 def _export(argv):
     ap = argparse.ArgumentParser(prog="prep-ic export", description="Export a project without the GUI.")
     ap.add_argument("project", help="project file (.json)")
@@ -38,7 +48,7 @@ def _export(argv):
             export_svg(project, args.svg)
         if args.librelane:
             for path in export_librelane(project, args.librelane, source=args.project):
-                _print(f"wrote {path}")
+                _inform(f"wrote {path}")
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1

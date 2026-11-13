@@ -136,6 +136,20 @@ class CommandLine(unittest.TestCase):
         self.assertEqual(r.returncode, 2, r.stderr)  # not 1 for findings, not 120 from the flush at exit
         self.assertIn("error:", r.stderr)
 
+    def test_export_output_to_a_closed_pipe_still_exits_0(self):
+        read, write = os.pipe()
+        os.close(read)
+        with tempfile.TemporaryDirectory() as d:
+            try:
+                r = subprocess.run([sys.executable, "-m", "prep_ic", "export", "examples/ihp_sg13g2_domains.json",
+                                    "--librelane", d], stdout=write, stderr=subprocess.PIPE, text=True, cwd=ROOT,
+                                   env=child_env(), timeout=120)
+            finally:
+                os.close(write)
+            self.assertEqual(r.returncode, 0, r.stderr)  # the files are written, the "wrote" lines only inform
+            self.assertNotIn("Exception ignored", r.stderr)
+            self.assertTrue(Path(d, "pad_cfg.tcl").is_file())
+
     def test_export_without_a_stdout_succeeds(self):
         code = ("import sys\nimport prep_ic.cli as cli\nsys.stdout = None\n"
                 "sys.exit(cli.main(['export', 'examples/ihp_sg13g2_domains.json', '--librelane', sys.argv[1]]))\n")
