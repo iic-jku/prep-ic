@@ -71,6 +71,7 @@ The code is split into a pure-Python, Qt-free model and exporters (`prep_ic.mode
 ├─ 📁 src/prep_ic/               the package (pip-installable)
 │  ├─ 📁 data/                   PDK profiles (pdks/*.json) and the package library (packages.json)
 │  ├─ 📁 formats/                project files and exports, no Qt
+│  │  ├─ files.py                writes the files of an export all or none
 │  │  ├─ lef.py                  minimal LEF reader: macro size and pins
 │  │  ├─ librelane.py            pad ring config, pad_cfg.tcl, chip_top.sv, macros.yaml, bondplan PINOUT
 │  │  ├─ pinlist.py              pin list as CSV or tab-separated text
@@ -197,7 +198,7 @@ One line per entry. Each side lists its pads as seen on the die: top and bottom 
 | `LO [gsgsg]` | differential: GND, LO_P, GND, LO_N, GND |
 | `NAME [in\|out\|tri\|io\|analog\|vdd\|vss\|iovdd\|iovss\|none]` | IO function, selects the IO cell (default guessed from name and type) |
 | `NAME [16mA]` | drive strength of output, tristate and bidirectional cells |
-| `NAME [schmitt]`, `NAME [noesd]` | another IO cell of the same function, where the PDK has one: a Schmitt trigger input, an analog pad without ESD clamp |
+| `NAME [schmitt]`, `NAME [noesd]`, `NAME [rfpad]` | another IO cell of the same function, where the PDK has one: a Schmitt trigger input, an analog pad without ESD clamp, the RF pad of the IHP chip templates |
 | `NAME [lock]` | locked pad: it can no longer be dragged and *Optimize Pad Order* leaves it in place |
 | `=== NAME` | power split: cuts the IO ring here and starts power domain `NAME` |
 
@@ -311,7 +312,7 @@ The GUI tests run offscreen and are skipped when Qt is not installed.
 | `prep-ic export chip.json --librelane DIR` | write the LibreLane files into `DIR` (needs a PDK in the project) |
 | `prep-ic check chip.json` | list the findings of the project |
 
-The `export` options combine, e.g. `prep-ic export chip.json --csv pins.csv --svg ring.svg`. Each written LibreLane file is printed, and all findings go to stderr. Exit code 0 from `export` says only that the files were written, so gate a script on `check`: it prints one finding per line or `no findings`, and exits 0 when clean, 1 with findings and 2 when the check did not run. A finding is a layout warning, an entry of the project file that could not be read, a macro LEF that is gone, a marked pin no longer in the LEF, or what `prep.analyse` reports: unknown tags and options, bad power domain names, crossings, long analog flylines, pins without a pad, split differential pairs, sensitive pads next to noisy ones, macro and supply checks. Both commands run without Qt. From a source checkout without installing, use `python -m prep_ic` with `src` on the Python path in place of `prep-ic`.
+The `export` options combine, e.g. `prep-ic export chip.json --csv pins.csv --svg ring.svg`. Each written LibreLane file is printed, and all findings go to stderr. `export` builds every output before it writes the first and writes all files or none, so a failure leaves the files as they were. Exit code 0 from `export` says only that the files were written, so gate a script on `check`: it prints one finding per line or `no findings`, and exits 0 when clean, 1 with findings and 2 when the check did not run. A finding is a layout warning, an entry of the project file that could not be read, a macro LEF that is gone, a marked pin no longer in the LEF, or what `prep.analyse` reports: unknown tags and options, bad power domain names, crossings, long analog flylines, pins without a pad, split differential pairs, sensitive pads next to noisy ones, macro and supply checks. Both commands run without Qt. From a source checkout without installing, use `python -m prep_ic` with `src` on the Python path in place of `prep-ic`.
 
 
 ## Supported PDKs and Packages
@@ -340,13 +341,15 @@ The IO function of a pad selects its cell (`<lib>` is `sg13g2` or `sg13cmos5l`, 
 | `[out]` | `<lib>_IOPadOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
 | `[tri]` | `<lib>_IOPadTriOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
 | `[io]` | `<lib>_IOPadInOut<drive>mA` | `gpiov2_pad` | `bi_24t` |
-| `[analog]` | `<lib>_IOPadAnalog` | `analog_esd_pad`, with `[noesd]` `analog_noesd_pad` | `asig_5p0` |
+| `[analog]` | `<lib>_IOPadAnalog`, with `[rfpad]` `<lib>_ip__rfpad_70x70` | `analog_esd_pad`, with `[noesd]` `analog_noesd_pad` | `asig_5p0` |
 | `[vdd]`, `[vss]` | `<lib>_IOPadVdd`, `<lib>_IOPadVss` | `vccd_lvc_clamped_pad`, `vssd_lvc_clamped_pad` | `dvdd`, `dvss` |
 | `[iovdd]`, `[iovss]` | `<lib>_IOPadIOVdd`, `<lib>_IOPadIOVss` | `vddio_hvc_clamped_pad`, `vssio_hvc_clamped_pad` | `dvdd`, `dvss` |
 | `[none]` | no IO cell | no IO cell | no IO cell |
 | Drive | 4, 16 or 30 mA, default 30 mA | none, a drive tag gets a warning | 24 mA, another drive gets a warning |
 
 The control pins of the sky130A and gf180mcuD cells are tied per function in `chip_top.sv`, so the core ports are the same as for IHP.
+
+On IHP, `[rfpad]` picks the RF pad of the chip templates instead of `IOPadAnalog`, for an `[analog]` pad or the signal pad of a group (`RF [gsg] [rfpad]`): `ip/sg13g2_ip__rfpad_70x70` of [ihp-sg13g2-ams-chip-template](https://github.com/iic-jku/ihp-sg13g2-ams-chip-template) and `ip/sg13cmos5l_ip__rfpad_70x70` of [ihp-sg13cmos5l-ams-chip-template](https://github.com/iic-jku/ihp-sg13cmos5l-ams-chip-template). It is one 80 × 250 µm cell with its own bond pad, ESD and shield, and no series resistor, so the core is wired to `padbare` instead of `padres`. Its bond pad sits where the bondpads of the other cells go, and `pad_cfg.tcl` moves the cell outward by the bondpad depth, checks that its supplies are on nets, places its top-level terminal and gives it no bondpad. `padring_config.yaml` names the four views to add to your `config.yaml`, in `PAD_LEFS`, `PAD_VERILOG_MODELS`, `EXTRA_GDS` and every corner of `LIB`. The README of the IP has the details.
 
 On sky130A, PREP-IC adds two 20 µm connect cells in front of the first IO supply pad. They tie `VCCHIB` to `VCCD`, `VSWITCH` and `VDDA` to `VDDIO`, and `VSSA` to `VSSIO`, and that side grows by 40 µm. On gf180mcuD, the `dvdd` and `dvss` pads short their two supply rings, so the IO supply and the core supply are one net (`VDD`, `VSS`).
 
