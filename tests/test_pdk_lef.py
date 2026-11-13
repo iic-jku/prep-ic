@@ -51,6 +51,8 @@ class ProfilesAgainstLef(unittest.TestCase):
             for ring in pdk.ring_cells:
                 with self.subTest(pdk=name, ring=ring["name"]):
                     self.assertEqual(macros[ring["master"]][0], ring["width"])
+                    supplies = {q for pins in ring.get("power_pins", {}).values() for q in pins}
+                    self.assertLessEqual(supplies, macros[ring["master"]][2])
             for function, cell in pdk.cells.items():
                 for master in masters(cell):
                     with self.subTest(pdk=name, master=master):
@@ -60,6 +62,8 @@ class ProfilesAgainstLef(unittest.TestCase):
                         self.assertLessEqual(h, pdk.cell_depth)
                         for role, pin in cell["pins"].items():
                             self.assertIn(pin, pins, role)
+                        supplies = {q for rail in pdk.power_pins_of(function).values() for q in rail}
+                        self.assertLessEqual(supplies, pins, "supply pins")
                         checked += 1
         self.assertGreater(checked, 0, "no profile found its LEF below PDK_ROOT")
 

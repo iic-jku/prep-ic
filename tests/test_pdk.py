@@ -243,6 +243,14 @@ class Gf180mcuD(unittest.TestCase):
             self.assertIn(conn, sv)
         self.assertEqual(sv.count("inout wire VDD"), 1)  # one port although two rail kinds share the net
 
+    def test_supply_cells_connect_only_their_own_pins(self):
+        # the LEF and Verilog of dvdd have DVDD, DVSS and VSS, those of dvss DVDD, DVSS and VDD
+        sv = chip_top_sv(self.project().layout())
+        for inst, pins in (("pad_VDD", {"DVDD", "DVSS", "VSS"}), ("pad_VSS", {"DVDD", "DVSS", "VDD"}),
+                           ("pad_DVDD", {"DVDD", "DVSS", "VSS"}), ("pad_DVSS", {"DVDD", "DVSS", "VDD"})):
+            block = re.search(rf"\b{inst} \((.*?)\);", sv, re.S).group(1)
+            self.assertEqual(set(re.findall(r"\.(\w+)\(", block)), pins, inst)
+
     def test_schmitt_input(self):
         p = self.project()
         p.sides["L"][0] = "clk [in] [schmitt]"
