@@ -232,6 +232,26 @@ class LoadProblems(unittest.TestCase):
         self.assertEqual(p.reload_macros(), dropped)  # the content stays dropped, so the finding stays
         self.assertTrue(set(dropped) <= set(prep.findings(p)))
 
+    def test_choices_that_load_as_defaults(self):
+        p = self.warnings({"sides": {"L": "A"}, "mode": "zigzag", "align": ["xyz"]})
+        self.assertEqual(p.load_warnings, ["Setting mode is no valid choice ('zigzag'), using ccw",
+                                           "Setting align is no valid choice (['xyz']), using center"])
+        self.assertEqual((p.settings.mode, p.settings.align), ("ccw", "center"))
+
+    def test_sides_that_are_no_text(self):
+        p = self.warnings({"format": 2, "sides": {"L": ["A", "B [in]", ""], "T": 5, "R": None}})
+        self.assertEqual(p.sides["L"], ["A", "B [in]", ""])  # a list of lines is read as lines
+        self.assertEqual(p.load_warnings, ["Side T is no text (5), read as one line"])
+
+    def test_macros_that_are_no_list(self):
+        for macros in (None, 3, "ab"):
+            p = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": macros}})
+            self.assertEqual(p.load_warnings, ["The floorplan could not be read, its macros were dropped"], macros)
+
+    def test_macro_name_that_is_no_text(self):
+        p = self.warnings({"sides": {"L": "A"}, "floorplan": {"macros": [{**self.MACRO, "name": None}]}})
+        self.assertEqual(p.load_warnings, ["Macro None: name not valid in the project file"])
+
     def test_floorplan_that_is_no_object(self):
         self.assertEqual(self.warnings({"sides": {"L": "A"}, "floorplan": 3}).load_warnings,
                          ["The floorplan could not be read, its macros were dropped"])

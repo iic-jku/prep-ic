@@ -185,7 +185,8 @@ def _valid(v, positive=False):
 
 def _bad_fields(d) -> List[str]:
     """Fields of a macro entry that load with a default or a size that cannot be meant."""
-    bad = [k for k in ("x", "y") if k in d and not _valid(d[k])]
+    bad = ["name"] if not isinstance(d.get("name"), str) else []
+    bad += [k for k in ("x", "y") if k in d and not _valid(d[k])]
     if "rot" in d and not (_valid(d["rot"]) and _f(d["rot"]) % 90 == 0):
         bad.append("rot")
     if d.get("halo") is not None and not _valid(d["halo"]):
@@ -208,8 +209,11 @@ def _read_macros(d):
     """The macros of a floorplan dict, and a warning for each part of it that had to be dropped."""
     if d is not None and not isinstance(d, dict):
         return [], ["The floorplan could not be read, its macros were dropped"]
+    entries = (d or {}).get("macros", [])
+    if not isinstance(entries, list):
+        return [], ["The floorplan could not be read, its macros were dropped"]
     macros, warnings = [], []
-    for i, m in enumerate((d or {}).get("macros", []), 1):
+    for i, m in enumerate(entries, 1):
         try:
             macros.append(Macro.from_dict(m))
             bad = _bad_fields(m)
