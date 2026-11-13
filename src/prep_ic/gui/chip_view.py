@@ -44,7 +44,7 @@ def _domain_bands(scene, layout, pal, fs):
         for dom, a, b in sections:
             if dom not in colors:
                 continue
-            a, b = H + a, H + b
+            a, b = layout.start(s) + a, layout.start(s) + b
             rect = {"T": (a, H, b - a, bh), "B": (a, D - H - bh, b - a, bh),
                     "L": (H, a, bh, b - a), "R": (W - H - bh, a, bh, b - a)}[s]
             band = scene.addRect(QRectF(*rect), make_pen(None), QBrush(QColor(colors[dom])))
@@ -63,7 +63,7 @@ def _domain_bands(scene, layout, pal, fs):
                 label.setPos(cx - tw / 2, cy - th / 2)
             label.setZValue(1.1)
     for sp in layout.splits:  # the cut: across the ring and the band
-        a, b = H + sp.a, H + sp.b
+        a, b = layout.start(sp.side) + sp.a, layout.start(sp.side) + sp.b
         w = max(b - a, fs * 0.35)
         c = (a + b) / 2
         rect = {"T": (c - w / 2, 0, w, H + bh), "B": (c - w / 2, D - H - bh, w, H + bh),
@@ -186,7 +186,7 @@ class MacroItem(QGraphicsRectItem):
 
 def _inner_band(layout, pin, depth):
     H, W, D = layout.ring_depth, layout.die_width, layout.die_height
-    a, b = H + pin.a, H + pin.b
+    a, b = layout.start(pin.side) + pin.a, layout.start(pin.side) + pin.b
     return {"T": (a, H - depth, b - a, depth), "B": (a, D - H, b - a, depth),
             "L": (H - depth, a, depth, b - a), "R": (W - H, a, depth, b - a)}[pin.side]
 

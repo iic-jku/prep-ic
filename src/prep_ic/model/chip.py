@@ -81,7 +81,7 @@ def _inner_point(layout, side, along) -> Point:
 
 
 def _along(pin_or_split, layout) -> float:
-    return layout.ring_depth + (pin_or_split.a + pin_or_split.b) / 2
+    return layout.start(pin_or_split.side) + (pin_or_split.a + pin_or_split.b) / 2
 
 
 def _pad_pins(project, layout) -> Dict[str, Tuple[str, int, object]]:
@@ -143,7 +143,7 @@ def drop_index(layout, project, side, along) -> int:
             elif nxt is not None:
                 centres[i] = nxt - pitch
             else:
-                centres[i] = layout.ring_depth + pitch * (i + 0.5)
+                centres[i] = layout.start(side) + pitch * (i + 0.5)
     for i, c in enumerate(centres):
         if along < c:
             return i
@@ -544,7 +544,7 @@ def place_line(project, side, index, to_side, along, layout=None) -> None:
     S = sum(widths)
     centred = project.settings.sanitized().align == "center"
     o = (E - S) / 2 if centred else (E - S if project.is_reversed(to_side) else 0.0)
-    pos = along - layout.ring_depth
+    pos = along - layout.start(to_side)
     # spacers that still fit on the side (a centred side needs them twice); more would grow the die
     room = max(0, int((E - S - (2 * w if centred else w)) / ((2 if centred else 1) * P) + 1e-9))
     if o <= pos <= o + S:

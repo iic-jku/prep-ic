@@ -92,6 +92,7 @@ class Layout:
     core_margin: float = 0.0           # IO ring to core area (core power ring), from the PDK
     side_space: Optional[Dict[str, float]] = None  # length available for pads per side
     ring_depth: float = 0.0            # die edge to the inner edge of the IO ring
+    row_start: Dict[str, float] = field(default_factory=dict)  # die edge to the first IO cell slot per side
     pdk: str = ""
     package: str = ""
     domains: List[str] = field(default_factory=list)   # power domains in numbering order
@@ -103,6 +104,10 @@ class Layout:
     @property
     def area_mm2(self):
         return self.die_width * self.die_height / 1e6
+
+    def start(self, side):
+        """Die edge to where position 0 along ``side`` lies (``a`` and ``b`` of pins count from here)."""
+        return self.row_start.get(side, self.ring_depth)
 
     def pins_on(self, side):
         return [p for p in self.pins if p.side == side]
@@ -151,6 +156,7 @@ def build_layout(project, selected=None):
             pads.pitch = max(pdk.site, round(pads.pitch / pdk.site) * pdk.site)
     P, H = cfg.std.pitch, cfg.cell_height
     d0 = pdk.edge_spacing if pdk else 0.0       # outer edge of the IO cells
+    Ctb, Clr = (pdk.row_start("T"), pdk.row_start("L")) if pdk else (H, H)  # where the rows start, past the corners
     split_gap = pdk.split_gap if pdk else SPLIT_GAP
 
     sides = {}
@@ -194,9 +200,9 @@ def build_layout(project, selected=None):
         if pdk:
             dw, dh = _snap(dw, pdk.site), _snap(dh, pdk.site)
         # fixed die incl. IO ring; keep room for at least one pitch between the corners
-        e_tb = max(P, dw - 2 * H)
-        e_lr = max(P, dh - 2 * H)
-        used = (e_tb + 2 * H, e_lr + 2 * H)
+        e_tb = max(P, dw - 2 * Ctb)
+        e_lr = max(P, dh - 2 * Clr)
+        used = (e_tb + 2 * Ctb, e_lr + 2 * Clr)
         if not _same_size(used, (cfg.die_width, cfg.die_height)):
             warnings.append(f"Fixed die size too small for the IO ring, using {used[0]:g} × {used[1]:g} µm"
                             if not _same_size(used, (dw, dh)) else
@@ -210,10 +216,11 @@ def build_layout(project, selected=None):
             min_w, min_h = cfg.core_width + 2 * m, cfg.core_height + 2 * m
             if pdk:
                 min_w, min_h = (math.ceil(v / pdk.site - 1e-9) * pdk.site for v in (min_w, min_h))
-            e_tb, e_lr = max(e_tb, min_w - 2 * H), max(e_lr, min_h - 2 * H)
+            e_tb, e_lr = max(e_tb, min_w - 2 * Ctb), max(e_lr, min_h - 2 * Clr)
         if square:
-            e_tb = e_lr = max(e_tb, e_lr)
-    W, Hh = e_tb + 2 * H, e_lr + 2 * H
+            side = max(e_tb + 2 * Ctb, e_lr + 2 * Clr)
+            e_tb, e_lr = side - 2 * Ctb, side - 2 * Clr
+    W, Hh = e_tb + 2 * Ctb, e_lr + 2 * Clr
     space = {s: e_tb if s in "TB" else e_lr for s in SIDES}
 
     # Numbering and positions along the sides; ring_seq walks the ring in numbering order
@@ -291,12 +298,12 @@ def build_layout(project, selected=None):
 
     def cell_rect(s, a, b, depth0=0.0):
         if s == "T":
-            return H + a, depth0, b - a, H - depth0
+            return Ctb + a, depth0, b - a, H - depth0
         if s == "B":
-            return H + a, Hh - H, b - a, H - depth0
+            return Ctb + a, Hh - H, b - a, H - depth0
         if s == "L":
-            return depth0, H + a, H - depth0, b - a
-        return W - H, H + a, H - depth0, b - a
+            return depth0, Clr + a, H - depth0, b - a
+        return W - H, Clr + a, H - depth0, b - a
 
     def inset(p):
         """Die edge to the outer edge of the bond pad."""
@@ -310,12 +317,12 @@ def build_layout(project, selected=None):
         shift = pdk.bondpad_shift(p["function"]) if pdk else 0.0
         c = p["c"] + (shift if s in "TB" else -shift)  # the left and right sides run with y downward here
         if s == "T":
-            return H + c - w / 2, ins, w, h
+            return Ctb + c - w / 2, ins, w, h
         if s == "B":
-            return H + c - w / 2, Hh - ins - h, w, h
+            return Ctb + c - w / 2, Hh - ins - h, w, h
         if s == "L":
-            return ins, H + c - w / 2, h, w
-        return W - ins - h, H + c - w / 2, h, w
+            return ins, Clr + c - w / 2, h, w
+        return W - ins - h, Clr + c - w / 2, h, w
 
     fs = min(P * 0.5, H * 0.36)
     max_len = max([len(p["name"]) for p in pins] + [4])
@@ -326,11 +333,11 @@ def build_layout(project, selected=None):
     add = prims.append
     add(dict(k="rect", x=0, y=0, w=W, h=Hh, style="die"))
     add(dict(k="rect", x=H, y=H, w=W - 2 * H, h=Hh - 2 * H, style="core"))
-    for x, y in ((0, 0), (W - H, 0), (0, Hh - H), (W - H, Hh - H)):
+    for x, y in ((0, 0), (W - Ctb, 0), (0, Hh - Clr), (W - Ctb, Hh - Clr)):
         if pdk:  # corner cell inside the seal ring spacing
             x, y = (x + d0 if x == 0 else x), (y + d0 if y == 0 else y)
-            add(dict(k="rect", x=x, y=y, w=H - d0, h=H - d0, style="corner"))
-            add(dict(k="line", x1=x, y1=y, x2=x + H - d0, y2=y + H - d0, style="cornerline"))
+            add(dict(k="rect", x=x, y=y, w=Ctb - d0, h=Clr - d0, style="corner"))
+            add(dict(k="line", x1=x, y1=y, x2=x + Ctb - d0, y2=y + Clr - d0, style="cornerline"))
         else:
             add(dict(k="rect", x=x, y=y, w=H, h=H, style="corner"))
             add(dict(k="line", x1=x, y1=y, x2=x + H, y2=y + H, style="cornerline"))
@@ -527,6 +534,6 @@ def build_layout(project, selected=None):
                   gutter=gutter, margin=margin, prims=prims, fixed_die=cfg.fixed_die, side_space=space,
                   core_limited=cfg.fixed_core and not cfg.fixed_die,
                   core_margin=pdk.core_margin if pdk else 0.0,
-                  ring_depth=H, pdk=pdk.name if pdk else "", package=pkg.name if pkg else "",
+                  ring_depth=H, row_start={"T": Ctb, "B": Ctb, "L": Clr, "R": Clr}, pdk=pdk.name if pdk else "", package=pkg.name if pkg else "",
                   domains=domains, splits=splits, unbonded_leads=unbonded, ring_cells=ring_cells,
                   rails=dict(pdk.rails) if pdk else dict(RAILS))
