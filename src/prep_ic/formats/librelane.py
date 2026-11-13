@@ -150,6 +150,11 @@ def config_yaml(layout, source=""):
                 "# Choose which core supply the standard cells use, e.g.:",
                 f"# VDD_NETS: [{', '.join(vdd)}]", f"# GND_NETS: [{', '.join(gnd)}]",
                 'VERILOG_POWER_DEFINE: "USE_POWER_PINS"', ""]
+    used = {p.cell for p in layout.pins} | {rc.master for rc in layout.ring_cells}
+    skip = sorted(m for m in pdk.ignore_disconnected if m in used)
+    if skip:  # a comment: a key here would replace the user's own list (logos, ID cells)
+        out += ["# LibreLane's disconnected pin check has to skip these IO cells. Add them to",
+                "# IGNORE_DISCONNECTED_MODULES in your config.yaml:"] + [f"# - {m}" for m in skip] + [""]
     for n in names.notes:
         out.append(f"# Note: {n}")
     return "\n".join(out).rstrip() + "\n"

@@ -46,6 +46,7 @@ class Pdk:
     ring_cells: tuple = ()     # cells the ring needs that are not pads: name, master, width, power_pins
     rails: Dict[str, str] = field(default_factory=lambda: dict(RAILS))  # net name per supply function
     bondpad_inset: Optional[float] = None  # cell's outer edge to its bond pad, None: a separate cell outside it
+    ignore_disconnected: tuple = ()  # IO cells LibreLane's disconnected pin check has to skip (IGNORE_DISCONNECTED_MODULES)
 
     @property
     def ring_depth(self):
@@ -132,7 +133,8 @@ def _pdks():
             default_pitch=d["default_pitch"], core_margin=d["core_margin"],
             split_gap=(d.get("split") or {}).get("gap"), split_filler=(d.get("split") or {}).get("filler"),
             power_pins=d["power_pins"], cells=d["cells"],
-            bondpad_default_shift=d["bondpad"].get("shift", 0.0), ring_cells=tuple(d.get("ring_cells", ())), bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)))
+            bondpad_default_shift=d["bondpad"].get("shift", 0.0), ring_cells=tuple(d.get("ring_cells", ())), bondpad_inset=d["bondpad"].get("inset"), rails=d.get("rails", dict(RAILS)),
+            ignore_disconnected=tuple(d.get("ignore_disconnected", ())))
     return out
 
 
