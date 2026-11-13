@@ -380,6 +380,10 @@ def build_layout(project, selected=None):
     for rc in ring_cells:
         x, y, w, h = cell_rect(rc.side, rc.a, rc.b, d0)
         add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=""))
+        across, along = (w, h) if rc.side in "TB" else (h, w)  # the name runs along the depth of the narrow cell
+        size = min(across * 0.7, along * 0.9 / (0.62 * max(1, len(rc.name))))
+        add(dict(k="text", x=x + w / 2, y=y + h / 2, text=rc.name, size=size, angle=90 if rc.side in "TB" else 0,
+                 anchor="center", color="muted", bold=False, tag=""))
 
     # Power splits: gap in the IO ring and the name of the domain that follows
     for sp in splits:

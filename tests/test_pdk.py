@@ -511,6 +511,19 @@ class Sky130A(unittest.TestCase):
         self.assertEqual(len(lay.ring_cells), 2)
         self.assertEqual({r.b - r.a for r in lay.ring_cells}, {20.0})
 
+    def test_the_connect_slices_carry_their_name_in_the_chip_view(self):
+        lay = self.project().layout()
+        texts = {pr["text"]: pr for pr in lay.prims if pr["k"] == "text"}
+        for rc in lay.ring_cells:
+            label = texts[rc.name]
+            cell = next(pr for pr in lay.prims if pr["k"] == "rect" and pr.get("style") == "iocell" and not pr.get("tag")
+                        and abs(pr["x"] + pr["w"] / 2 - label["x"]) < 1e-6 and abs(pr["y"] + pr["h"] / 2 - label["y"]) < 1e-6)
+            across, along = (cell["w"], cell["h"]) if rc.side in "TB" else (cell["h"], cell["w"])
+            self.assertEqual((label["angle"], label["anchor"]), (90 if rc.side in "TB" else 0, "center"))  # along the depth
+            self.assertLessEqual(label["size"], across)                       # fits the 20 um cell
+            self.assertLessEqual(label["size"] * 0.62 * len(rc.name), along)  # and its depth
+        self.assertFalse(any(pr["k"] == "text" and pr["text"].startswith("connect") for pr in compac_like().layout().prims))
+
     def test_chip_top(self):
         sv = chip_top_sv(self.project().layout())
         for conn in (".OE_N(~bi_c2p_en)", ".OE_N(~t_c2p_en)", ".DM(3'b001)", ".DM(3'b110)", ".HLD_H_N(pad_clk_TIE_HI_ESD)",
