@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Chip view model: analysis and edits of pads and macros together."""
 
+import itertools
 import unittest
 
 from tests import ROOT
@@ -385,6 +386,24 @@ class PlaceTests(unittest.TestCase):
         self.assertEqual(p.physical_lines("L"), ["A", "X", "B"])
         after = self.centres(p)
         self.assertEqual((after["A"], after["B"]), (before["A"], before["B"]))
+
+    def test_into_a_gap_past_the_ring_cells(self):
+        # sky130A puts two 20 um connect cells in front of the first IO supply pad, which are no lines
+        def sky(lines):
+            p = prep.Project(sides={"L": lines, "T": [], "R": [], "B": []})
+            p.settings.pdk, p.settings.fixed_die, p.settings.die_width, p.settings.die_height = "sky130A", True, 1500, 1500
+            return p
+        cases = (("IOVSS", ["a", "", "b", "IOVDD", "IOVSS", "c", ""]), ("a", ["a", "c", "b", "IOVDD", "IOVSS", "", ""]))
+        for (target, expect), into in itertools.product(cases, (10, 70)):  # near either end of the 80 um spacer after the target
+            p = sky(["a", "", "b", "IOVDD", "IOVSS", "", "c"])
+            lay = p.layout()
+            self.assertEqual(len(lay.ring_cells), 2)
+            before = self.centres(p)
+            q = next(q for q in lay.pins if q.name == target)
+            place_line(p, "L", 6, "L", lay.start("L") + q.b + into, lay)
+            self.assertEqual(p.physical_lines("L"), expect, (target, into))
+            after = self.centres(p)
+            self.assertEqual({k: v for k, v in after.items() if k != "c"}, {k: v for k, v in before.items() if k != "c"})
 
     def test_inside_the_pads_reorders(self):
         p = set_lines(chip(), "L", ["A", "B", "C"])
