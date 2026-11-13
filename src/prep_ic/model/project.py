@@ -96,6 +96,7 @@ class Project:
     sides: Dict[str, List[str]] = field(default_factory=lambda: {s: [] for s in SIDES})
     floorplan: Floorplan = field(default_factory=Floorplan)
     load_warnings: List[str] = field(default_factory=list, compare=False, repr=False)  # from reading files
+    file_problems: List[str] = field(default_factory=list, compare=False, repr=False)  # what reading the file dropped
 
     @classmethod
     def example(cls):
@@ -134,8 +135,9 @@ class Project:
         return line
 
     def reload_macros(self) -> List[str]:
-        """Read the macro LEFs again. The warnings replace ``load_warnings``, so the findings stay current."""
-        self.load_warnings = self.floorplan.reload()
+        """Read the macro LEFs again. Their warnings replace those of the last read in ``load_warnings``,
+        what reading the project file dropped stays, since it is still missing."""
+        self.load_warnings = self.file_problems + self.floorplan.reload()
         return self.load_warnings
 
     def layout(self, selected=None):

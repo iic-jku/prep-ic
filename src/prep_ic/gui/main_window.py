@@ -105,7 +105,8 @@ class MainWindow(QMainWindow):
         self.check = None                  # chip.ChipCheck of the last render
         self.selected_macros = set()
         self.layers = {k for k, _ in LAYERS}
-        self.fp_warnings = []  # from reading the macro LEFs
+        self.fp_warnings = []  # from reading the project file and the macro LEFs
+        self.file_problems = []  # what reading the project file dropped, kept through edits and reloads
         self.undo_stack, self.redo_stack = [], []   # project states (dicts) before/after each step
         self._current = None
         self._loading = False
@@ -550,7 +551,7 @@ class MainWindow(QMainWindow):
             pdk=self.cb_pdk.currentData() or "", package=self.cb_pkg.currentData() or "",
             **{k: sp.value() for k, sp in self.sp_checks.items()},
         )
-        project = Project(settings, floorplan=copy.deepcopy(self.floorplan))
+        project = Project(settings, floorplan=copy.deepcopy(self.floorplan), file_problems=list(self.file_problems))
         for s in SIDES:
             project.set_physical_lines(s, text_to_lines(self.editors[s].text()))  # spacers at the end count
         return project
@@ -559,6 +560,7 @@ class MainWindow(QMainWindow):
         self.floorplan = copy.deepcopy(project.floorplan)
         self.selected_macros &= {m.name for m in self.floorplan.macros}
         self.fp_warnings = list(project.load_warnings)
+        self.file_problems = list(project.file_problems)
         self.macro_panel.set_floorplan(self.floorplan)
         st = project.settings.sanitized()
         self._loading = True
@@ -790,7 +792,7 @@ class MainWindow(QMainWindow):
         return m
 
     def reload_macros(self):
-        self.fp_warnings = self.floorplan.reload()
+        self.fp_warnings = self.file_problems + self.floorplan.reload()
         self.floorplan_changed()
 
     def rotate_macro(self, m):

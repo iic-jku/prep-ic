@@ -225,6 +225,13 @@ class LoadProblems(unittest.TestCase):
             self.assertEqual(p.load_warnings, [expected], label)
         self.assertEqual([m.name for m in p.floorplan.macros], ["a"])  # the good one stays
 
+    def test_a_reload_keeps_what_the_file_dropped(self):
+        p = self.warnings({"sides": {"L": "A"}, "cellh": "tall", "floorplan": {"macros": [{**self.MACRO, "io": None}]}})
+        dropped = ["Macro entry 1 (a) could not be read and was dropped", "Setting cellh is no valid number ('tall'), using the default"]
+        self.assertEqual(p.load_warnings, dropped)
+        self.assertEqual(p.reload_macros(), dropped)  # the content stays dropped, so the finding stays
+        self.assertTrue(set(dropped) <= set(prep.findings(p)))
+
     def test_floorplan_that_is_no_object(self):
         self.assertEqual(self.warnings({"sides": {"L": "A"}, "floorplan": 3}).load_warnings,
                          ["The floorplan could not be read, its macros were dropped"])
