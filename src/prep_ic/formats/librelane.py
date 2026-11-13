@@ -179,6 +179,10 @@ def pad_cfg_tcl(layout, source=""):
     pads = [(ROWS[s][1], names.inst[p.no], low(p)) for s in ROW_ORDER for p in _row_pins(layout, s)]
     pads += [(ROWS[rc.side][1], rc.name, _ring_low(layout, rc)) for rc in layout.ring_cells]
     gaps = [(ROWS[sp.side][1], gap_low(sp), sp.domain) for sp in layout.splits]
+    # cells that carry their own bond pad: row, instance, pad pin, supply pins
+    own = [(ROWS[s][1], names.inst[p.no], pdk.spec(p.function, p.variant)["pins"]["pad"],
+            [q for f in ("iovdd", "iovss", "vdd", "vss") for q in pdk.power_pins_of(p.function, p.variant).get(f, [])])
+           for s in ROW_ORDER for p in _row_pins(layout, s) if pdk.outward_of(p.function, p.variant)]
     out = _header("#", layout, pdk, source)
     out += [
         "#",
@@ -212,7 +216,13 @@ def pad_cfg_tcl(layout, source=""):
             f"# power splits: row, lower/left edge of the gap in µm, domain after the split ({pdk.split_gap or 0:g} µm gap)",
             "set prp_gaps {"]
     out += [f"    {{{row} {pos:g} {dom}}}" for row, pos, dom in gaps]
-    out += ["}", "",
+    out += ["}", ""]
+    if own:
+        out += [f"# cells with their own bond pad, {pdk.bondpad_h:g} µm further out than the row: row, instance, pad pin, supply pins",
+                "set prp_own_bondpad {"]
+        out += [f"    {{{row} {inst} {pin} {{{' '.join(supplies)}}}}}" for row, inst, pin, supplies in own]
+        out += ["}", ""]
+    out += [
             "foreach pad $prp_pads {",
             "    lassign $pad row inst_name pos",
             '    if { [set inst [$block findInst $inst_name]] == "NULL" } {',
@@ -245,13 +255,58 @@ def pad_cfg_tcl(layout, source=""):
                 "    odb::dbInst_destroy [$block findInst $name]",
                 "}",
                 ""]),
+            *([] if not own else [
+                "# A cell with its own bond pad is drawn for the place of the bondpads, its rails sit that much further in.",
+                "# place_pad leaves it FIRM in the row, so it is moved outward before connect_by_abutment.",
+                "set dbu [$block getDefUnits]",
+                "set die [$block getDieArea]",
+                f"set near [expr {{round(($::env(PAD_EDGE_SPACING) - {pdk.bondpad_h:g}) * $dbu)}}]",
+                "foreach pad $prp_own_bondpad {",
+                "    lassign $pad row inst_name pin supplies",
+                "    set inst [$block findInst $inst_name]",
+                "    set box [$inst getBBox]",
+                "    lassign [$inst getLocation] lx ly",
+                "    set dx 0",
+                "    set dy 0",
+                "    switch -- $row {",
+                "        IO_SOUTH { set dy [expr {$near - [$box yMin]}] }",
+                "        IO_NORTH { set dy [expr {[$die yMax] - $near - [$box yMax]}] }",
+                "        IO_WEST  { set dx [expr {$near - [$box xMin]}] }",
+                "        IO_EAST  { set dx [expr {[$die xMax] - $near - [$box xMax]}] }",
+                "    }",
+                "    set moved [expr {abs($dx + $dy) / double($dbu)}]",
+                f"    if {{ abs($moved - {pdk.bondpad_h:g}) > 0.001 }} {{",
+                f'        puts stderr "\\[ERROR\\] $inst_name would move $moved µm outward, not {pdk.bondpad_h:g} µm: no cell for this ring."',
+                "        exit 1",
+                "    }",
+                "    set status [$inst getPlacementStatus]",
+                "    $inst setPlacementStatus PLACED",
+                "    $inst setLocation [expr {$lx + $dx}] [expr {$ly + $dy}]",
+                "    $inst setPlacementStatus $status",
+                "}",
+                ""]),
             'puts "\\[INFO\\] Connecting ring signals…"',
             "connect_by_abutment",
             "",
+            *([] if not own else [
+                "# An open IO supply ring shows in neither DRC, LVS nor timing",
+                "foreach pad $prp_own_bondpad {",
+                "    lassign $pad row inst_name pin supplies",
+                "    set inst [$block findInst $inst_name]",
+                "    foreach pin_name $supplies {",
+                "        set iterm [$inst findITerm $pin_name]",
+                '        if { $iterm eq "NULL" || $iterm eq "" || [$iterm getNet] eq "NULL" || [$iterm getNet] eq "" } {',
+                '            puts stderr "\\[ERROR\\] $inst_name/$pin_name is on no net."',
+                "            exit 1",
+                "        }",
+                "    }",
+                "}",
+                ""]),
             *([] if pdk.bondpad_inset is not None else [
                 "if { [info exists ::env(PAD_BONDPAD_NAME)] } {",
                 "    foreach pad $prp_pads {",
                 "        lassign $pad row inst_name pos",
+                *([] if not own else ["        if { [lsearch -exact -index 1 $prp_own_bondpad $inst_name] >= 0 } { continue }"]),
                 "        set master_name [[[$block findInst $inst_name] getMaster] getName]",
                 "        dict for {master_regex offset} $::env(PAD_BONDPAD_OFFSETS) {",
                 "            if {[regexp $master_regex $master_name]} {",
@@ -261,9 +316,17 @@ def pad_cfg_tcl(layout, source=""):
                 "    }",
                 "}",
                 ""]),
+            *([] if not own else [
+                "# place_bondpad creates the top-level terminal of the other pads",
+                "foreach pad $prp_own_bondpad {",
+                "    lassign $pad row inst_name pin supplies",
+                "    place_io_terminals $inst_name/$pin",
+                "}",
+                ""]),
             "if { [info exists ::env(PAD_PLACE_IO_TERMINALS)] } {",
             "    foreach pad $prp_pads {",
             "        lassign $pad row inst_name pos",
+            *([] if not own else ["        if { [lsearch -exact -index 1 $prp_own_bondpad $inst_name] >= 0 } { continue }"]),
             "        set master_name [[[$block findInst $inst_name] getMaster] getName]",
             "        foreach master_pin $::env(PAD_PLACE_IO_TERMINALS) {",
             "            lassign [split $master_pin /] check_master pin_name",
