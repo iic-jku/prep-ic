@@ -405,6 +405,16 @@ class PlaceTests(unittest.TestCase):
             after = self.centres(p)
             self.assertEqual({k: v for k, v in after.items() if k != "c"}, {k: v for k, v in before.items() if k != "c"})
 
+    def test_into_a_gap_past_a_refused_split(self):
+        # gf180mcuD refuses splits: the line stays in the editor but takes no room in the ring
+        for into in (10, 70):
+            p = prep.Project(sides={"L": ["a", "=== X", "", "b"], "T": [], "R": [], "B": []})
+            p.settings.pdk, p.settings.fixed_die, p.settings.die_width, p.settings.die_height = "gf180mcuD", True, 1500, 1500
+            lay = p.layout()
+            a = next(q for q in lay.pins if q.name == "a")
+            place_line(p, "L", 3, "L", lay.start("L") + a.b + into, lay)
+            self.assertEqual(p.physical_lines("L"), ["a", "=== X", "b", ""], into)
+
     def test_inside_the_pads_reorders(self):
         p = set_lines(chip(), "L", ["A", "B", "C"])
         lay = p.layout()

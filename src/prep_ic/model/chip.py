@@ -507,11 +507,13 @@ def _line_widths(project, layout, side) -> List[float]:
     splits = {project.physical_line_index(sp.side, sp.line): sp for sp in layout.splits if sp.side == side}
     P = _spacer_width(project)
     out = []
-    for i in range(len(project.physical_lines(side))):
+    for i, line in enumerate(project.physical_lines(side)):
         if (side, i) in by_line:
             out.append(sum(p.b - p.a for p in by_line[(side, i)]))
         elif i in splits:
             out.append(splits[i].b - splits[i].a)
+        elif (parse_line(line) or {}).get("split"):
+            out.append(0.0)  # a split the PDK refuses keeps its line but takes no room
         else:
             out.append(P)
     return out

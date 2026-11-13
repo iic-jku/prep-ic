@@ -170,7 +170,7 @@ def build_layout(project, selected=None):
                 continue
             if e["split"] and split_gap is None:  # keeps its line, so the editor's pin numbers stay aligned
                 refused.append(e["domain"])
-                entries.append({"line": i, "blank": True, "pads": [], "width": 0.0, "group": None})
+                entries.append({"line": i, "blank": True, "refused": True, "pads": [], "width": 0.0, "group": None})
                 continue
             if e["split"]:
                 entries.append({"line": i, "blank": True, "split": e["domain"], "pads": [],
@@ -188,7 +188,8 @@ def build_layout(project, selected=None):
                             "width": sum(p["pitch"] for p in pads)})
         sides[s] = entries
     if refused:
-        warnings.append(f"Power split {', '.join(refused)} ignored: {pdk.label} has no split mechanism in its profile")
+        names = ", ".join(d.strip() or "===" for d in refused)
+        warnings.append(f"Power split {names} ignored: {pdk.label} has no split mechanism in its profile")
     if sized:
         warnings.append("Custom pad size ignored with a PDK (bondpad of the PDK used) for " + ", ".join(sized))
 
@@ -515,7 +516,7 @@ def build_layout(project, selected=None):
             if "ring" in e:  # no line of the editor
                 continue
             if e["blank"] or not e["pads"]:
-                lab.append("===" if "split" in e else "")
+                lab.append("===" if "split" in e or "refused" in e else "")
             elif len(e["pads"]) == 1:
                 lab.append(str(e["pads"][0]["no"]))
             else:
