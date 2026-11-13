@@ -238,7 +238,7 @@ def build_layout(project, selected=None):
                     a, b = E - b, E - a
                 p["a"], p["b"] = a, b
                 if pdk:  # IO cell on the grid, as centred in the slot as the grid allows
-                    cw = pdk.width_of(p["function"])
+                    cw = pdk.width_of(p["function"], p["variant"])
                     p["c"] = a + _snap((b - a - cw) / 2, pdk.site) + cw / 2
                 else:
                     p["c"] = (a + b) / 2
@@ -289,7 +289,7 @@ def build_layout(project, selected=None):
             c = pdk.cell(p["function"], p["drive"], p["variant"])
             if c:
                 p["cell"] = c[0]
-                p["w"], p["h"] = pdk.bondpad_of(p["function"])[:2]
+                p["w"], p["h"] = pdk.bondpad_of(p["function"], p["variant"])[:2]
                 if p["variant"] and p["variant"] not in pdk.cells[p["function"]].get("variants", {}):
                     warnings.append(f"Variant {p['variant']} ignored for pin {p['no']} {p['name']} ({p['function']})")
                 if p["drive"] and not pdk.drives(p["function"]):
@@ -310,12 +310,12 @@ def build_layout(project, selected=None):
         """Die edge to the outer edge of the bond pad."""
         if not pdk:
             return H * 0.05
-        own = pdk.bondpad_of(p["function"])[2]
+        own = pdk.bondpad_of(p["function"], p["variant"])[2]
         return pdk.edge_spacing - p["h"] if own is None else pdk.edge_spacing + own
 
     def pad_rect(p):
         w, h, s, ins = p["w"], p["h"], p["side"], inset(p)
-        shift = pdk.bondpad_shift(p["function"]) if pdk else 0.0
+        shift = pdk.bondpad_shift(p["function"], p["variant"]) if pdk else 0.0
         c = p["c"] + (shift if s in "TB" else -shift)  # the left and right sides run with y downward here
         if s == "T":
             return Ctb + c - w / 2, ins, w, h
@@ -373,7 +373,7 @@ def build_layout(project, selected=None):
         for p in pins:
             if p["cell"]:
                 c = p["c"]
-                cw = pdk.width_of(p["function"])
+                cw = pdk.width_of(p["function"], p["variant"])
                 x, y, w, h = cell_rect(p["side"], c - cw / 2, c + cw / 2, d0)
                 add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=f"{p['side']}:{p['line']}"))
 
@@ -469,8 +469,9 @@ def build_layout(project, selected=None):
     if pdk:
         narrow = {}
         for p in pins:
-            if p["cell"] and p["pitch"] < pdk.width_of(p["function"]) - 1e-9:
-                narrow.setdefault(pdk.width_of(p["function"]), []).append(str(p["no"]))
+            cw = pdk.width_of(p["function"], p["variant"])
+            if p["cell"] and p["pitch"] < cw - 1e-9:
+                narrow.setdefault(cw, []).append(str(p["no"]))
         for width, nos in narrow.items():
             warnings.append(f"Pitch smaller than the IO cell ({width:g} µm) at pin " + ", ".join(nos))
         for dom in domains:
