@@ -106,7 +106,7 @@ The code is split into a pure-Python, Qt-free model and exporters (`prep_ic.mode
 │  ├─ test_gui.py                GUI smoke tests
 │  ├─ test_model.py              entry parser, settings, die and core sizing
 │  ├─ test_pdk.py                PDK profiles, IO cells, LibreLane and bondplan exports
-│  ├─ test_pdk_lef.py            every profile against the LEF of its IO library, needs PDK_ROOT
+│  ├─ test_pdk_lef.py            every profile against the LEF of its IO library, needs PDK_ROOT (CI has no PDK)
 │  └─ test_qt_essentials.py      guards the PySide6-Essentials-only dependency
 ├─ 📁 LICENSES/                  license texts the REUSE check resolves against
 │  └─ Apache-2.0.txt
@@ -119,7 +119,7 @@ The code is split into a pure-Python, Qt-free model and exporters (`prep_ic.mode
 ├─ pyproject.toml                packaging, dependency and the prep-ic entry point
 ├─ README.md
 ├─ REUSE.toml                    licensing of files that cannot carry an SPDX header
-└─ ToDo.md                       open defects, release follow-ups, sky130A and gf180mcuD
+└─ ToDo.md                       planned work
 ```
 
 
@@ -205,10 +205,10 @@ Options combine: `RFOUT [gsg] {70x70} @125`, `DOUT[3] [out] [4mA]`. An unknown t
 
 ### PDK, package and LibreLane
 
-In *Settings → Technology* choose a PDK (IHP SG13G2 or SG13CMOS5L) and optionally a package from the EUROPRACTICE library.
+In *Settings → Technology* choose a PDK (IHP SG13G2, IHP SG13CMOS5L, sky130A or gf180mcuD) and optionally a package from the EUROPRACTICE library.
 
 - **With a PDK** the preview shows the real ring: the seal ring spacing, the IO cells, the corner cells and the bondpads (sizes in [Supported PDKs and Packages](https://github.com/iic-jku/prep-ic#supported-pdks-and-packages)). Function and drive of each pad are set in the *Pin List* or with tags in the editor. The rows of the *Pin List* also show the IO cell, the power domain and the package pin.
-- **Power splits**: an `=== NAME` line leaves a 10 µm gap in the IO ring. Every ring segment gets its own rails (`VDD_NAME`, `VSS_NAME`, `IOVDD_NAME`, `IOVSS_NAME`), and without splits they are `VDD`, `VSS`, `IOVDD` and `IOVSS`. PREP-IC warns when a domain has no supply pad of a kind.
+- **Power splits**: an `=== NAME` line leaves a 10 µm gap in the IO ring of an IHP PDK. sky130A and gf180mcuD have no split cell in their profile yet, so there the line stays in the editor and gets a warning. Every ring segment gets its own rails (`VDD_NAME`, `VSS_NAME`, `IOVDD_NAME`, `IOVSS_NAME`), and without splits they are `VDD`, `VSS`, `IOVDD` and `IOVSS`. PREP-IC warns when a domain has no supply pad of a kind.
 - **The LibreLane tab and *File → Export LibreLane Files…*** write:
   - `padring_config.yaml`: `DIE_AREA`, `CORE_AREA`, `PAD_CFG` and the `PAD_SOUTH/EAST/NORTH/WEST` lists, to copy into the LibreLane `config.yaml` (flow `Chip`),
   - `pad_cfg.tcl`: places the IO cells exactly as planned (LibreLane's default script spreads them evenly) and keeps the split gaps free,
@@ -316,7 +316,7 @@ The `export` options combine, e.g. `prep-ic export chip.json --csv pins.csv --sv
 
 ## Supported PDKs and Packages
 
-The PDK profiles are taken from the IO cell LEF and the LibreLane IO config of each PDK (`libs.ref/<io_library>/lef/` and `libs.tech/librelane/<io_library>/config.tcl`).
+The PDK profiles are taken from the IO cell LEF and the LibreLane IO config of each PDK (`libs.ref/<library>/lef/<io_library>*.lef`, for sky130A `libs.ref/sky130_fd_io/lef/sky130_ef_io.lef`, and `libs.tech/librelane/<io_library>/config.tcl`).
 
 | | IHP SG13G2 | IHP SG13CMOS5L | sky130A | gf180mcuD |
 |---|---|---|---|---|
@@ -330,7 +330,7 @@ The PDK profiles are taken from the IO cell LEF and the LibreLane IO config of e
 | Core margin (core power ring) | 45 µm | 45 µm | 100 µm | 61 µm |
 | Power split gap and filler | 10 µm, `sg13g2_Filler2000` | 10 µm, `sg13cmos5l_Filler2000` | none, a split gets a warning | none, a split gets a warning |
 
-A new project starts standard pads at the minimum pitch and RF pads at 100 µm. Selecting a PDK in the GUI raises a pitch below the minimum to 100 µm.
+A new project starts standard pads at 80 µm, the minimum pitch of the IHP PDKs and sky130A, and RF pads at 100 µm. Selecting a PDK in the GUI raises a pitch below its minimum to 100 µm.
 
 The IO function of a pad selects its cell (`<lib>` is `sg13g2` or `sg13cmos5l`, the sky130A cells start with `sky130_ef_io__`, the gf180mcuD ones with `gf180mcu_fd_io__`):
 
