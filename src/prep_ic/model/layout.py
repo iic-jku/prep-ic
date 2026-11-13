@@ -374,7 +374,7 @@ def build_layout(project, selected=None):
             if p["cell"]:
                 c = p["c"]
                 cw = pdk.width_of(p["function"], p["variant"])
-                x, y, w, h = cell_rect(p["side"], c - cw / 2, c + cw / 2, d0)
+                x, y, w, h = cell_rect(p["side"], c - cw / 2, c + cw / 2, d0 - pdk.outward_of(p["function"], p["variant"]))
                 add(dict(k="rect", x=x, y=y, w=w, h=h, style="iocell", tag=f"{p['side']}:{p['line']}"))
 
     for rc in ring_cells:

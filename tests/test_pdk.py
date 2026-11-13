@@ -174,6 +174,45 @@ class PdkGeometry(unittest.TestCase):
             self.assertEqual(set(re.findall(r"\.(\w+)\(", plain)), {"pad", "padres", "vdd", "vss", "iovdd", "iovss"})
             self.assertIn(".padbare(ain_padres[0])", rf)  # the core net of the role, whichever pin carries it
 
+    OWN_BONDPAD = {"master": "my_rf", "own_bondpad": True, "pins": {"pad": "pad", "analog": "padbare"},
+                   "power_pins": {"vdd": "vdd", "vss": "vss", "iovdd": "iovdd", "iovss": "iovss"}}
+
+    def own_bondpad_layout(self):
+        p = compac_like()
+        p.sides["R"][0] = "ain[0] [analog] [noesd]"
+        return p.layout()
+
+    def test_cell_with_its_own_bond_pad_reaches_out_to_where_the_bondpads_go(self):
+        with with_cell("analog", variants={"noesd": self.OWN_BONDPAD}):
+            lay = self.own_bondpad_layout()
+            pdk = pdk_model.get_pdk("ihp-sg13g2")
+            self.assertEqual((pdk.outward_of("analog", "noesd"), pdk.outward_of("analog")), (70.0, 0.0))
+        own, plain = (next(q for q in lay.pins if q.name == n) for n in ("ain[0]", "ain[1]"))
+        self.assertEqual(own.x, plain.x)  # the bond pad stays where the separate bondpad would be
+        cells = [pr for pr in lay.prims if pr["k"] == "rect" and pr.get("style") == "iocell"]
+        own_cell = next(pr for pr in cells if pr.get("tag") == f"R:{own.line}")
+        plain_cell = next(pr for pr in cells if pr.get("tag") == f"R:{plain.line}")
+        self.assertEqual((own_cell["w"], plain_cell["w"]), (250.0, 180.0))  # right side: the depth runs along x
+        self.assertEqual(own_cell["x"] + own_cell["w"], lay.die_width - 70.0)
+
+    def test_pad_cfg_moves_it_out_checks_its_supplies_and_places_its_terminal(self):
+        with with_cell("analog", variants={"noesd": self.OWN_BONDPAD}):
+            tcl = pad_cfg_tcl(self.own_bondpad_layout())
+        self.assertIn("{IO_EAST pad_ain_0 pad {iovdd iovss vdd vss}}", tcl)
+        self.assertIn("$inst setLocation", tcl)
+        abut = tcl.index("\nconnect_by_abutment\n")
+        self.assertLess(tcl.index("setLocation"), abut)  # abutment sees the final place
+        self.assertLess(abut, tcl.index("is on no net"))
+        self.assertIn("lsearch -exact -index 1 $prp_own_bondpad $inst_name", tcl)  # no bondpad cell for it
+        self.assertIn("place_io_terminals $inst_name/$pin", tcl)
+        self.assertNotIn("prp_own_bondpad", pad_cfg_tcl(compac_like().layout()))  # other rings stay as they were
+
+    def test_own_bond_pad_means_nothing_where_every_cell_has_one(self):
+        lay = Sky130A().project().layout()
+        pdk = pdk_model.get_pdk("sky130A")
+        self.assertEqual(pdk.outward_of("analog"), 0.0)
+        self.assertNotIn("prp_own_bondpad", pad_cfg_tcl(lay))
+
     def test_variant_the_pdk_does_not_have_is_a_warning(self):
         p = compac_like()
         p.sides["L"][0] = "clk [in] [schmitt]"

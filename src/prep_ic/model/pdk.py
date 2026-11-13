@@ -86,6 +86,16 @@ class Pdk:
         own = self.spec(function, variant).get("bondpad", {})
         return own.get("shift", self.bondpad_default_shift)
 
+    def outward_of(self, function, variant=None):
+        """How far the IO cell reaches past the outer edge of its row, toward the die edge.
+
+        A cell with ``own_bondpad`` carries its bond pad where the separate bondpads of the other cells go, so it
+        sits the bondpad depth further out. In a PDK whose cells all carry their bond pad this means nothing.
+        """
+        if self.bondpad_inset is None and self.spec(function, variant).get("own_bondpad"):
+            return self.bondpad_h
+        return 0.0
+
     def drives(self, function):
         return list(self.cells.get(function, {}).get("drives", []))
 
