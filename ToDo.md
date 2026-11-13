@@ -3,6 +3,10 @@
 Planned work on PREP-IC. Each item names the files it touches. Remove an item in the commit that finishes it.
 
 
+## Waiting for the PDK
+
+- [ ] **`[padbare]` for IHP analog pads (`data/pdks/ihp-sg13g2.json`, `data/pdks/ihp-sg13cmos5l.json`).** The chip templates' own IO library (`ip/*_io_custom`) gives `IOPadAnalog` a `padbare` pin, the pad without the series resistor of `padres`, and iic-jku/IHP-Open-PDK#37 brings it into the PDK. Once the PDK in IIC-OSIC-TOOLS has it, a `[padbare]` variant can wire the core to `padbare`, and `tests/test_pdk_lef.py` checks the pin.
+
 ## New PDKs: what stays open
 
 Both profiles are in and go through `OpenROAD.PadRing` with every pad and bond pad centre as planned. No whole flow has run on either yet.
