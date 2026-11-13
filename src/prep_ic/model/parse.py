@@ -188,10 +188,10 @@ def expand(entry, settings):
             pitch = base.pitch
         return {"name": name, "type": typ, "w": w, "h": h, "pitch": pitch}
 
-    def finish(pad, function):
+    def finish(pad, function, shield=False):
         pad["function"] = function or infer_function(pad["name"], pad["type"])
-        pad["drive"] = entry.get("drive")
-        pad["variant"] = entry.get("variant")
+        pad["drive"] = None if shield else entry.get("drive")  # drive and variant tag the signal pad of a group
+        pad["variant"] = None if shield else entry.get("variant")
         return pad
 
     g = entry["group"]
@@ -205,7 +205,7 @@ def expand(entry, settings):
         seq = [("GND", "gnd"), (name + "_P", sig_t), ("GND", "gnd"), (name + "_N", sig_t), ("GND", "gnd")]
     else:
         seq = [(("GND", "gnd") if c == "g" else (name, sig_t)) for c in g]
-    return [finish(make(n, t, True), None if t == "gnd" else fn) for n, t in seq]
+    return [finish(make(n, t, True), None if t == "gnd" else fn, shield=t == "gnd") for n, t in seq]
 
 
 def split_lines(text):

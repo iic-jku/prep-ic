@@ -388,6 +388,17 @@ class Sky130A(unittest.TestCase):
         p.sides["L"][1] = "o [out] [4mA]"
         self.assertIn("Drive strength ignored for pin 2 o (out)", p.layout().warnings)
 
+    def test_group_options_belong_to_the_signal_pad(self):
+        # the GND shields of an RF group take no variant and no drive, so neither warns for them
+        for pdk, line, signal, cell in (("sky130A", "RF [gsg] [noesd]", "RF", "sky130_ef_io__analog_noesd_pad"),
+                                        ("ihp-sg13g2", "DOUT [gsg] [d] [16mA]", "DOUT", "sg13g2_IOPadOut16mA")):
+            p = prep.Project(sides={"L": [line, "VDD", "VSS", "IOVDD", "IOVSS"], "T": [], "R": [], "B": []})
+            p.settings.pdk = pdk
+            lay = p.layout()
+            self.assertEqual(lay.warnings, [], pdk)
+            self.assertEqual({q.name: q.cell for q in lay.pins if q.name == signal}, {signal: cell})
+            self.assertEqual([(q.drive, q.variant) for q in lay.pins if q.name == "GND"], [(None, None)] * 2)
+
     def test_splits_are_refused(self):
         p = self.project()
         p.sides["B"] = ["=== ANA"] + p.sides["B"]
