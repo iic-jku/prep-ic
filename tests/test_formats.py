@@ -150,6 +150,45 @@ class CommandLine(unittest.TestCase):
             self.assertNotIn("Exception ignored", r.stderr)
             self.assertTrue(Path(d, "pad_cfg.tcl").is_file())
 
+    def test_export_writes_all_files_or_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            # an output that cannot be written: the CSV before it stays unwritten
+            r = self.run_cli("export", "examples/padring.json", "--csv", str(d / "p.csv"), "--svg", str(d / "no" / "p.svg"))
+            self.assertEqual(r.returncode, 1, r.stderr)
+            self.assertFalse((d / "p.csv").exists())
+            # LibreLane files without a PDK: nothing at all, not even the folder
+            r = self.run_cli("export", "examples/padring.json", "--csv", str(d / "q.csv"), "--librelane", str(d / "ll"))
+            self.assertEqual(r.returncode, 1, r.stderr)
+            self.assertFalse((d / "q.csv").exists() or (d / "ll").exists())
+            # one LibreLane file that cannot be written: the others keep what they held before
+            ll = d / "ll2"
+            (ll / "chip_top.sv").mkdir(parents=True)
+            (ll / "pad_cfg.tcl").write_text("old", encoding="utf-8")
+            r = self.run_cli("export", "examples/ihp_sg13g2_domains.json", "--librelane", str(ll))
+            self.assertEqual(r.returncode, 1, r.stderr)
+            self.assertEqual(sorted(p.name for p in ll.iterdir()), ["chip_top.sv", "pad_cfg.tcl"])
+            self.assertEqual((ll / "pad_cfg.tcl").read_text(encoding="utf-8"), "old")
+
+    def test_a_rename_that_fails_midway_puts_the_old_files_back(self):
+        from unittest import mock
+        from prep_ic.formats import files
+        with tempfile.TemporaryDirectory() as d:
+            a, b, c = (Path(d, n) for n in ("a.txt", "b.txt", "c.txt"))
+            a.write_text("old a", encoding="utf-8")
+            b.write_text("old b", encoding="utf-8")
+            real = os.replace
+
+            def flaky(src, dst):
+                if str(src).endswith("b.txt.prep-ic-tmp"):  # the second new file cannot go into place
+                    raise PermissionError("locked")
+                return real(src, dst)
+            with mock.patch.object(files.os, "replace", flaky), self.assertRaises(PermissionError):
+                files.write_all({a: b"new a", b: b"new b", c: b"new c"})
+            self.assertEqual((a.read_text(encoding="utf-8"), b.read_text(encoding="utf-8"), c.exists()),
+                             ("old a", "old b", False))
+            self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ["a.txt", "b.txt"])
+
     def test_export_without_a_stdout_succeeds(self):
         code = ("import sys\nimport prep_ic.cli as cli\nsys.stdout = None\n"
                 "sys.exit(cli.main(['export', 'examples/ihp_sg13g2_domains.json', '--librelane', sys.argv[1]]))\n")

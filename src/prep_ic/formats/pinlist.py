@@ -3,6 +3,9 @@
 """Pin list as rows, tab-separated text or CSV."""
 
 import csv
+import io
+
+from .files import write_all
 
 from ..model.constants import FUNCTION_NAMES, SIDE_NAMES, TYPE_NAMES
 
@@ -21,9 +24,15 @@ def to_tsv(layout):
     return "\n".join("\t".join(map(str, r)) for r in [HEADER] + rows(layout))
 
 
+def csv_bytes(layout):
+    """The pin list as CSV, UTF-8 with BOM for Excel."""
+    f = io.StringIO(newline="")
+    w = csv.writer(f)
+    w.writerow(HEADER)
+    w.writerows(rows(layout))
+    return f.getvalue().encode("utf-8-sig")
+
+
 def export_csv(project, path):
     """Write the pin list of a :class:`Project` as CSV (UTF-8 with BOM for Excel)."""
-    with open(path, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f)
-        w.writerow(HEADER)
-        w.writerows(rows(project.layout()))
+    write_all({path: csv_bytes(project.layout())})

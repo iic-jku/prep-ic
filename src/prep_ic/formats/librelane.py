@@ -19,6 +19,7 @@ from pathlib import Path
 from .. import __version__
 from ..model.constants import POWER_FUNCTIONS, SIDE_NAMES
 from ..model.pdk import get_package, get_pdk
+from .files import text_bytes, write_all
 
 SIGNAL_FUNCTIONS = ("in", "out", "tri", "inout", "analog")
 # LibreLane pad rows: side → (list name, row name, lists bottom→top for vertical rows)
@@ -640,12 +641,7 @@ def librelane_files(project, source="", out_dir=None):
 
 
 def export_librelane(project, directory, source=""):
-    """Write the generated files into ``directory``; returns the written paths."""
+    """Write the generated files into ``directory``, all or none; returns the written paths."""
     d = Path(directory)
-    d.mkdir(parents=True, exist_ok=True)
-    paths = []
-    for name, text in librelane_files(project, source, out_dir=d).items():
-        path = d / name
-        path.write_text(text, encoding="utf-8")
-        paths.append(path)
-    return paths
+    texts = librelane_files(project, source, out_dir=d)  # raises before any file without a PDK
+    return write_all({d / name: text_bytes(text) for name, text in texts.items()}, make_dirs=[d])

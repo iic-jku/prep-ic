@@ -61,5 +61,5 @@ def to_svg(layout, pal=EXPORT_PALETTE, title="PREP-IC"):
 
 def export_svg(project, path, title="PREP-IC"):
     """Write the drawing of a :class:`Project` as SVG."""
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(to_svg(project.layout(), title=title))
+    from .files import text_bytes, write_all
+    write_all({path: text_bytes(to_svg(project.layout(), title=title))})
