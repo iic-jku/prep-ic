@@ -19,7 +19,7 @@ A `Project` holds the settings, the entry lines of each side and the `floorplan`
 - **Two line orders.** `project.sides` holds each side in numbering order (counter-clockwise or clockwise). The side editors and every chip view edit use the physical order, top and bottom from left to right, left and right from top to bottom. `physical_lines`, `set_physical_lines` and `physical_line_index` convert between the two.
 - **Grid.** With a PDK the pitches, pad positions and a fixed die snap to the PDK placement site (1 µm for the IHP profiles and sky130A, 0.1 µm for gf180mcuD).
 - **Old files stay readable.** New project keys are optional and `from_dict` falls back to the defaults. `tests/data/layout_baseline.json` pins die size, margin and pin geometry of reference projects, so a layout change shows up as a failing test.
-- **Data, not code, for technologies.** A PDK profile is one JSON file in `data/pdks/` (read by `model/pdk.py`), a package one entry in `data/packages.json`. A profile holds the ring geometry, the rails, how a power split is made (a PDK without one refuses splits), ring cells that are no pads, and per function the IO cell with its width, bond pad, supply pins, tied control pins, polarity and variants. `tests/test_pdk_lef.py` compares every profile with its LEF when `PDK_ROOT` is set.
+- **Data, not code, for technologies.** A PDK profile is one JSON file in `data/pdks/` (read by `model/pdk.py`), a package one entry in `data/packages.json`. A profile holds the ring geometry (a corner cell may be taller than wide, as on sky130A), the rails, how a power split is made (a PDK without one refuses splits), ring cells that are no pads, the IO cells LibreLane's disconnected pin check has to skip, and per function the IO cell with its width, bond pad, supply pins, tied control pins, polarity and variants. `tests/test_pdk_lef.py` compares every profile with its LEF when `PDK_ROOT` is set, which CI does not have, so run it in the IIC-OSIC-TOOLS image after a profile change.
 
 ## Die size
 
@@ -78,7 +78,7 @@ Per side, the connected unlocked pads keep the set of slots they occupy and are 
 
 An `=== NAME` line starts the domain `NAME` in numbering order. The ring is closed, so the pads before the first split belong to the domain of the last split. Splits without a name are called `D1`, `D2`, and so on. A single split cuts the ring once and leaves one domain, and two splits that start the same name give separate segments, both with a warning. Every domain has its own rails (`VDD_NAME`, `VSS_NAME`, `IOVDD_NAME`, `IOVSS_NAME`), and without splits they are `VDD`, `VSS`, `IOVDD` and `IOVSS`.
 
-With a PDK a split is a gap of the PDK's `split_gap` (10 µm) in the IO ring. `pad_cfg.tcl` places a filler cell of the PDK into each gap as a temporary blocker, so the IO fill leaves the gap free, and removes the blockers after the fill.
+With a PDK a split is a gap of the PDK's `split_gap` (10 µm on IHP) in the IO ring. A profile without a `split` entry (sky130A, gf180mcuD) refuses splits: the line keeps its place in the editor, takes no room and gets a warning. `pad_cfg.tcl` places a filler cell of the PDK into each gap as a temporary blocker, so the IO fill leaves the gap free, and removes the blockers after the fill.
 
 ## Undo
 
