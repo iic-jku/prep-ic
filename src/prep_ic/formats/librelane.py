@@ -168,7 +168,8 @@ def pad_cfg_tcl(layout, source=""):
     Hh = layout.die_height
 
     def low(p):  # lower/left edge of the IO cell along its row, die coordinates (origin lower-left)
-        return (p.x if p.side in "TB" else p.y) - pdk.bondpad_shift(p.function) - pdk.width_of(p.function) / 2
+        return ((p.x if p.side in "TB" else p.y) - pdk.bondpad_shift(p.function, p.variant)
+                - pdk.width_of(p.function, p.variant) / 2)
 
     def gap_low(sp):
         if sp.side in "TB":
@@ -352,7 +353,8 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
         if not p.cell:
             continue
         master, pins = pdk.cell(p.function, p.drive, p.variant)
-        pp = pdk.power_pins_of(p.function)
+        pp = pdk.power_pins_of(p.function, p.variant)
+        spec = pdk.spec(p.function, p.variant)
         power = [f".{pin}({layout.rail(f, p.domain)})" for f in ("iovdd", "iovss", "vdd", "vss") for pin in pp.get(f, [])]
         conns = []
         if p.no in names.port:
@@ -362,9 +364,9 @@ def chip_top_sv(layout, source="", module="chip_top", core_module="chip_core"):
                 if on_pad(base, role):
                     continue
                 net = f"{base}_PAD{idx}" if role == "pad" else f"{base}_{NET_SUFFIX[role]}{idx}"
-                invert = "~" if role in pdk.cells[p.function].get("active_low", ()) else ""
+                invert = "~" if role in spec.get("active_low", ()) else ""
                 conns.append(f".{pin}({invert}{net})")
-        tie_conns, tie_wires = _tied_pins(pdk.cells[p.function], names.inst[p.no])
+        tie_conns, tie_wires = _tied_pins(spec, names.inst[p.no])
         conns += tie_conns
         out += [f"    wire {w};" for w in tie_wires]
         dom = f", domain {p.domain}" if p.domain else ""

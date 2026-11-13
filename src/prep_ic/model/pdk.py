@@ -57,23 +57,33 @@ class Pdk:
         """Die edge to where the IO cells of a side begin: past the corner cell, which may be taller than wide."""
         return self.edge_spacing + self.corner[0 if side in "TB" else 1]
 
-    def width_of(self, function):
-        """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
-        return self.cells.get(function, {}).get("width", self.cell_width)
+    def spec(self, function, variant=None):
+        """The IO cell entry of a function, with the fields of ``variant`` laid over it if the cell has that variant.
 
-    def power_pins_of(self, function):
+        A variant may name its own master, pins, supply pins, ties, width or bond pad, the rest is the cell's.
+        Its pins keep the roles of the function, so the core ports do not depend on the variant.
+        """
+        c = self.cells.get(function, {})
+        own = c.get("variants", {}).get(variant, {}) if variant else {}
+        return {**{k: v for k, v in c.items() if k != "variants"}, **own}
+
+    def width_of(self, function, variant=None):
+        """Size along the edge of the IO cell of a function, ``cell_width`` unless the cell has its own."""
+        return self.spec(function, variant).get("width", self.cell_width)
+
+    def power_pins_of(self, function, variant=None):
         """Rail kind → supply pins of the IO cell of a function, ``power_pins`` unless the cell has its own."""
-        pins = self.cells.get(function, {}).get("power_pins", self.power_pins)
+        pins = self.spec(function, variant).get("power_pins", self.power_pins)
         return {rail: [p] if isinstance(p, str) else list(p) for rail, p in pins.items()}
 
-    def bondpad_of(self, function):
+    def bondpad_of(self, function, variant=None):
         """``(w, h, inset)`` of the bond pad of a function, ``inset`` as in ``bondpad_inset``."""
-        own = self.cells.get(function, {}).get("bondpad", {})
+        own = self.spec(function, variant).get("bondpad", {})
         return own.get("w", self.bondpad_w), own.get("h", self.bondpad_h), own.get("inset", self.bondpad_inset)
 
-    def bondpad_shift(self, function):
+    def bondpad_shift(self, function, variant=None):
         """Bond pad centre minus cell centre along the row, in die coordinates (x or y upward)."""
-        own = self.cells.get(function, {}).get("bondpad", {})
+        own = self.spec(function, variant).get("bondpad", {})
         return own.get("shift", self.bondpad_default_shift)
 
     def drives(self, function):
@@ -85,10 +95,10 @@ class Pdk:
         ``pins`` maps roles (pad, in, out, oe, analog) to the pin names of the master.
         An unknown drive falls back to the default drive, an unknown variant to the plain cell.
         """
-        c = self.cells.get(function)
-        if c is None:
+        if function not in self.cells:
             return None
-        master = c.get("variants", {}).get(variant, {}).get("master", c["master"])
+        c = self.spec(function, variant)
+        master = c["master"]
         if "{drive}" in master:
             if drive not in c["drives"]:
                 drive = c["default_drive"]

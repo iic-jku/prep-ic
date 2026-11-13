@@ -156,6 +156,24 @@ class PdkGeometry(unittest.TestCase):
             self.assertEqual(lay.warnings, [])
             self.assertIn("my_schmitt pad_clk", chip_top_sv(lay))
 
+    def test_cell_variant_brings_its_own_pins_supplies_ties_and_width(self):
+        # a variant lays its fields over those of the cell, the rest stays the cell's
+        own = {"master": "my_rf", "pins": {"pad": "pad", "analog": "padbare"}, "width": 90.0, "ties": {"TEST": "1'b0"},
+               "power_pins": {"vdd": "vdd", "vss": "vss", "iovdd": "iovdd", "iovss": "iovss"}}
+        with with_cell("analog", variants={"noesd": own}):
+            p = compac_like()
+            p.sides["R"][0] = "ain[0] [analog] [noesd]"
+            lay = p.layout()
+            sv = chip_top_sv(lay)
+            pdk = pdk_model.get_pdk("ihp-sg13g2")
+            self.assertEqual(lay.warnings, [])
+            self.assertEqual((pdk.width_of("analog", "noesd"), pdk.width_of("analog")), (90.0, 80.0))
+            rf = re.search(r"my_rf pad_ain_0 \((.*?)\);", sv, re.S).group(1)
+            self.assertEqual(set(re.findall(r"\.(\w+)\(", rf)), {"pad", "padbare", "TEST", "vdd", "vss", "iovdd", "iovss"})
+            plain = re.search(r"sg13g2_IOPadAnalog pad_ain_1 \((.*?)\);", sv, re.S).group(1)
+            self.assertEqual(set(re.findall(r"\.(\w+)\(", plain)), {"pad", "padres", "vdd", "vss", "iovdd", "iovss"})
+            self.assertIn(".padbare(ain_padres[0])", rf)  # the core net of the role, whichever pin carries it
+
     def test_variant_the_pdk_does_not_have_is_a_warning(self):
         p = compac_like()
         p.sides["L"][0] = "clk [in] [schmitt]"
