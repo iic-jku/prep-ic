@@ -517,6 +517,24 @@ def _line_widths(project, layout, side) -> List[float]:
     return out
 
 
+def _ring_slot(project, layout, side) -> Optional[Tuple[int, float]]:
+    """Physical line index the ring cells of ``side`` stand in front of, and their width, or ``None``.
+
+    Ring cells are no lines, so they are found by the pads that touch them in the layout.
+    """
+    cells = [rc for rc in layout.ring_cells if rc.side == side]
+    if not cells:
+        return None
+    a, b = min(rc.a for rc in cells), max(rc.b for rc in cells)
+    by_line = _pins_by_line(project, layout)
+    for (s, i), pins in sorted(by_line.items()):
+        if s == side and math.isclose(min(p.a for p in pins), b, abs_tol=1e-6):
+            return i, b - a
+        if s == side and math.isclose(max(p.b for p in pins), a, abs_tol=1e-6):
+            return i + 1, b - a
+    return None
+
+
 def place_line(project, side, index, to_side, along, layout=None) -> None:
     """Drop a line at ``along`` (die coordinate along ``to_side``), keeping every other pad in place.
 
@@ -540,8 +558,13 @@ def place_line(project, side, index, to_side, along, layout=None) -> None:
         widths[index:index + 1] = [P] * len(gap)
     else:
         dst, widths = project.physical_lines(to_side), _line_widths(project, layout, to_side)
+    ring = _ring_slot(project, layout, to_side)
+    slots = list(enumerate(widths))   # (physical line index, width), ring cells as (None, width)
+    if ring:
+        at = ring[0] + (len(gap) - 1 if to_side == side and ring[0] > index else 0)
+        slots.insert(at, (None, ring[1]))
     E = layout.side_space[to_side]
-    S = sum(widths)
+    S = sum(wj for _, wj in slots)
     centred = project.settings.sanitized().align == "center"
     o = (E - S) / 2 if centred else (E - S if project.is_reversed(to_side) else 0.0)
     pos = along - layout.start(to_side)
@@ -549,10 +572,13 @@ def place_line(project, side, index, to_side, along, layout=None) -> None:
     room = max(0, int((E - S - (2 * w if centred else w)) / ((2 if centred else 1) * P) + 1e-9))
     if o <= pos <= o + S:
         cur = o
-        for j, wj in enumerate(widths):
+        for j, wj in slots:
             if cur <= pos < cur + wj:
                 break
             cur += wj
+        if j is None:   # on a ring cell: sort in as on a pad
+            move_line(project, side, index, to_side, drop_index(layout, project, to_side, along))
+            return
         if dst[j].strip() or (to_side == side and index <= j < index + len(gap)):
             if dst[j].strip():   # on a pad or split: sort in as before
                 move_line(project, side, index, to_side, drop_index(layout, project, to_side, along))
