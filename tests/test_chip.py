@@ -13,6 +13,7 @@ from prep_ic.model.chip import (add_missing_pads, align_macros, analyse, auto_ro
                                      move_line, optimize_pad_order, place_line, suggest_supply_pads,
                                      toggle_lock)
 from prep_ic.model.floorplan import Macro, MacroDef
+from prep_ic.model.parse import format_entry, parse_line
 
 MACRO_DIR = ROOT / "tests" / "data" / "macros" / "adc_sar"
 FIXTURE = MACRO_DIR / "final" / "lef" / "adc_sar_top.lef"
@@ -85,6 +86,16 @@ class AnalyseTests(unittest.TestCase):
                      "A {0x0}", "A {0x10}", "A @0", "A [0mA]"):  # numbers that cannot be meant
             self.assertIn(f"Unknown tag or option in pad name: {line}",
                           analyse(set_lines(chip(), "L", [line])).warnings)
+
+    def test_a_second_tag_of_one_kind_stays_in_the_name(self):
+        # the rightmost one counts, the other is reported instead of overwriting it without a word
+        for line, name in (("A [noesd] [schmitt]", "A [noesd]"), ("A @100 @200", "A @100"), ("A [in] [out]", "A [in]"),
+                           ("A [4mA] [16mA]", "A [4mA]"), ("A {60x60} {70x70}", "A {60x60}"), ("A [lock] [lock]", "A [lock]"),
+                           ("A [gsg] [gs]", "A [gsg]"), ("A [d] [a]", "A [d]")):
+            self.assertIn(f"Unknown tag or option in pad name: {name}", analyse(set_lines(chip(), "L", [line])).warnings)
+        e = parse_line("A [noesd] [schmitt]")
+        self.assertEqual((e["name"], e["variant"]), ("A [noesd]", "schmitt"))
+        self.assertEqual(format_entry(e), "A [noesd] [schmitt]")  # a rewrite from the Pin List keeps both
 
     def test_valid_lines_are_not_flagged(self):
         for line in ("A", "A[3]", "A [3]", "DOUT[3] [out] [4mA]", "RFOUT [gsg] {70x70} @125", "B [lock]", "---", "NC",
