@@ -27,6 +27,9 @@
     "iovdd": "DVDD",
     "iovss": "DVSS"
   },
+  "ignore_disconnected": [
+    "gf180mcu_fd_io__bi_24t"
+  ],
   "cells": {
     "in": {
       "master": "gf180mcu_fd_io__in_c",

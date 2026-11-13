@@ -243,6 +243,16 @@ class Gf180mcuD(unittest.TestCase):
             self.assertIn(conn, sv)
         self.assertEqual(sv.count("inout wire VDD"), 1)  # one port although two rail kinds share the net
 
+    def test_config_names_the_cells_for_the_disconnected_pin_check(self):
+        # output pads leave Y open, so LibreLane's check has to skip bi_24t, as in the template; a comment, since a key
+        # here would replace the user's own list
+        cfg = config_yaml(self.project().layout())
+        self.assertIn("# - gf180mcu_fd_io__bi_24t", cfg)
+        self.assertNotRegex(cfg, r"(?m)^IGNORE_DISCONNECTED_MODULES")
+        p = self.project()
+        p.sides["L"], p.sides["B"] = ["clk [in]"], ["VDD", "VSS"]
+        self.assertNotIn("IGNORE_DISCONNECTED_MODULES", config_yaml(p.layout()))  # no bi_24t in this ring
+
     def test_supply_cells_connect_only_their_own_pins(self):
         # the LEF and Verilog of dvdd have DVDD, DVSS and VSS, those of dvss DVDD, DVSS and VDD
         sv = chip_top_sv(self.project().layout())
@@ -390,6 +400,17 @@ class Sky130A(unittest.TestCase):
             self.assertIn(conn, sv)
         self.assertIn("wire pad_clk_TIE_HI_ESD;", sv)
         self.assertIn("sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um", sv)
+
+    def test_config_names_the_cells_for_the_disconnected_pin_check(self):
+        cfg = config_yaml(self.project().layout())
+        hint = cfg[cfg.index("IGNORE_DISCONNECTED_MODULES"):]
+        self.assertEqual(re.findall(r"(?m)^# - (\S+)$", hint),
+                         ["sky130_ef_io__analog_esd_pad", "sky130_ef_io__analog_noesd_pad",
+                          "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um",
+                          "sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um"])
+        ihp = prep.Project(sides={"L": ["a [analog]", "o [out]", "VDD", "VSS", "IOVDD", "IOVSS"], "T": [], "R": [], "B": []})
+        ihp.settings.pdk = "ihp-sg13g2"
+        self.assertNotIn("IGNORE_DISCONNECTED_MODULES", config_yaml(ihp.layout()))
 
     def test_no_drive_variants(self):
         p = self.project()

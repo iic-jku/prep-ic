@@ -217,6 +217,7 @@ In *Settings → Technology* choose a PDK (IHP SG13G2 or SG13CMOS5L) and optiona
   - `macros.yaml` (with macros): `MACROS` with LEF and GDS, the `vh`, `nl`, `pnl`, `lib` and `spef` views found in LibreLane's layout below `final/`, and the instance locations (`i_chip_core.<instance>`),
   - `bondplan_pinout.yaml` (with a package): `PACKAGE_NAME` and `PINOUT` for the bondplan config.
 - An IHP design must still provide the bondpad cell (`PAD_BONDPAD_NAME`, e.g. `sg13g2_ip__bondpad_70x70` with `EXTRA_LEFS` and `EXTRA_GDS`). The IO cells of sky130A and gf180mcuD carry their own bond pad.
+- On sky130A and gf180mcuD, `padring_config.yaml` ends with a comment naming the IO cells LibreLane's disconnected pin check has to skip (gf180mcuD output pads leave `Y` open, the sky130A connect cells and analog pads mark no pin as a power pin). Add them to `IGNORE_DISCONNECTED_MODULES` in your `config.yaml`. The export writes no key there, since it would replace your own list.
 
 See [`examples/ihp_sg13g2_domains.json`](https://github.com/iic-jku/prep-ic/blob/main/examples/ihp_sg13g2_domains.json). From the command line:
 

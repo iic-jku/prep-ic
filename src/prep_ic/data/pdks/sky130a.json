@@ -71,6 +71,12 @@
       }
     }
   ],
+  "ignore_disconnected": [
+    "sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um",
+    "sky130_ef_io__connect_vdda_vddio_and_vssa_vssio_slice_20um",
+    "sky130_ef_io__analog_esd_pad",
+    "sky130_ef_io__analog_noesd_pad"
+  ],
   "cells": {
     "in": {
       "master": "sky130_ef_io__gpiov2_pad",
