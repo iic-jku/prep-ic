@@ -9,8 +9,11 @@
 
 import argparse
 import sys
+from pathlib import Path
 
-from . import APP_NAME, __version__, export_csv, export_librelane, export_svg, findings, load
+from . import APP_NAME, __version__, findings, librelane_files, load, to_svg
+from .formats.files import text_bytes, write_all
+from .formats.pinlist import csv_bytes
 
 
 def _print(text):
@@ -42,13 +45,21 @@ def _export(argv):
         ap.error("nothing to export, give --csv, --svg and/or --librelane")
     try:
         project = load(args.project)
+        layout = project.layout()
+        files, dirs, ll = {}, [], []  # every output is built before the first is written: all or none
         if args.csv:
-            export_csv(project, args.csv)
+            files[Path(args.csv)] = csv_bytes(layout)
         if args.svg:
-            export_svg(project, args.svg)
+            files[Path(args.svg)] = text_bytes(to_svg(layout))
         if args.librelane:
-            for path in export_librelane(project, args.librelane, source=args.project):
-                _inform(f"wrote {path}")
+            d = Path(args.librelane)
+            texts = librelane_files(project, args.project, out_dir=d)
+            ll = [d / name for name in texts]
+            files.update({d / name: text_bytes(text) for name, text in texts.items()})
+            dirs.append(d)
+        write_all(files, make_dirs=dirs)
+        for path in ll:
+            _inform(f"wrote {path}")
     except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
