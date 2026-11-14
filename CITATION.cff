@@ -8,7 +8,7 @@ authors:
   given-names: Simon
   orcid: https://orcid.org/0009-0001-5994-5477
 title: "GitHub Repository of PREP-IC: Pinout, Ring and Early floorplan Planner for ICs"
-date-released: 2026-11-13
+date-released: 2026-11-14
 url: https://github.com/iic-jku/prep-ic
 license: Apache-2.0
 identifiers:
