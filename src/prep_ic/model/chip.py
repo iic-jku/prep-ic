@@ -14,7 +14,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
-from .constants import SIDES
+from .constants import POWER_FUNCTIONS, SIDES
 from .floorplan import _function, _overlap, core_area, floorplan_warnings, nearest_side
 from .parse import has_unknown_option, parse_line
 
@@ -267,15 +267,17 @@ def analyse(project, layout=None) -> ChipCheck:
         if f.length > st.max_flyline:
             out.warnings.append(f"Flyline {f.pin} {round(f.length)} µm (limit {st.max_flyline:g} µm)")
 
-    # supplies: a VDD and a VSS pad (by function) of the macro's domain within reach
+    # supplies: a VDD and a VSS pad of the macro's domain within reach, by net: on gf180mcuD the IO supply pads
+    # are the same cells on the core nets
     splits = bool(layout.splits)
     for m in macros:
         w, h = m.size()
         cx, cy = x0 + m.x + w / 2, y0 + m.y + h / 2
         dom_pins = [q for q in layout.pins if not m.domain or not splits or q.domain == m.domain]
         for function, kind in (("vdd", "VDD"), ("vss", "VSS")):
+            on_net = {f for f in POWER_FUNCTIONS if layout.rails[f] == layout.rails[function]}
             near = [math.hypot(*(a - b for a, b in zip(_inner_point(layout, q.side, _along(q, layout)), (cx, cy))))
-                    for q in dom_pins if q.function == function]
+                    for q in dom_pins if q.function in on_net]
             if near and min(near) <= st.max_supply_dist:
                 continue
             dom = m.domain if splits and m.domain else "ring"
