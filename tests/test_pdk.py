@@ -731,6 +731,55 @@ class LibreLaneOutput(unittest.TestCase):
         self.assertRegex(text, r'\n  25:\s+~\s+# not bonded')
         self.assertNotIn('"~"', text)  # the string "~" would be taken for a pad name
 
+    # OpenDB objects as Tcl commands that answer each method from a dict
+    TCL_MOCK = r"""
+proc puts {args} {}
+namespace eval odb {}
+set log {}
+proc new {name args} { interp alias {} $name {} obj $args }
+proc obj {fields method args} {
+    set value [dict get $fields $method]
+    if { [llength $args] } { return [dict get $value [lindex $args 0]] }
+    return $value
+}
+proc place_io_terminals {term} { lappend ::log [list terminal $term] }
+proc odb::dbBPin_create {bterm} { lappend ::log [list bpin $bterm]; return bpin }
+proc odb::dbBox_create {bpin layer args} { lappend ::log [list box $layer {*}$args] }
+proc bpin {method args} { lappend ::log [list $method {*}$args] }
+set block [new block findInst {pad_io io pad_vdd vdd}]
+new io getMaster gpio getName pad_io
+new gpio getName sky130_ef_io__gpiov2_pad
+new vdd getMaster vccd getName pad_vdd getOrigin {1000 2000} getOrient R90 findITerm {VCCD bus}
+new vccd getName sky130_ef_io__vccd_lvc_clamped_pad
+new bus getNet net getMTerm mterm
+new net get1stBTerm bterm getName VDD
+new bterm getName VDD
+new mterm getMPins mpin
+new mpin getGeometry box
+new box getTechLayer met3 xMin 10 yMin 20 xMax 30 yMax 60
+set prp_pads {{IO_WEST pad_io 100} {IO_SOUTH pad_vdd 300}}
+set ::env(PAD_PLACE_IO_TERMINALS) "sky130_ef_io__gpiov2_pad/PAD sky130_ef_io__vccd_lvc_clamped_pad/VCCD_PAD sky130_ef_io__vccd_lvc_clamped_pad/VCCD"
+"""
+
+    def test_pad_cfg_places_a_terminal_on_every_listed_pin(self):
+        try:
+            import tkinter
+            tcl = tkinter.Tcl()
+        except Exception as e:  # noqa: BLE001  (no Tcl in this Python)
+            self.skipTest(f"no Tcl: {e}")
+        script = pad_cfg_tcl(Sky130A().project().layout())
+        procs = re.findall(r"^proc prp_.*?^\}$", script, re.M | re.S)
+        block = "\n".join(procs + [script[script.index("if { [info exists ::env(PAD_PLACE_IO_TERMINALS)] }"):script.index("\nremove_io_rows")]])
+        try:
+            tcl.eval(self.TCL_MOCK)
+            tcl.eval(block)
+            log = [list(tcl.splitlist(e)) for e in tcl.splitlist(tcl.eval("set log"))]
+        finally:
+            tcl.eval("unset -nocomplain ::env(PAD_PLACE_IO_TERMINALS)")  # Tcl's env is the process environment
+        # the first listed pin as in LibreLane, the second as all its shapes, turned by R90 and moved to the origin
+        self.assertEqual(log, [["terminal", "pad_io/PAD"], ["terminal", "pad_vdd/VCCD_PAD"], ["bpin", "bterm"],
+                               ["box", "met3", "940", "2010", "980", "2030"], ["setPlacementStatus", "FIRM"]])
+
 
 class MacroExport(unittest.TestCase):
     def project(self):
