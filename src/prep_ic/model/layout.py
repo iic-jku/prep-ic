@@ -478,9 +478,9 @@ def build_layout(project, selected=None):
                 narrow.setdefault(cw, []).append(str(p["no"]))
         for width, nos in narrow.items():
             warnings.append(f"Pitch smaller than the IO cell ({width:g} µm) at pin " + ", ".join(nos))
-        for dom in domains:
-            have = {p["function"] for p in pins if p["domain"] == dom}
-            missing = list(dict.fromkeys(pdk.rails[f] for f in POWER_FUNCTIONS if f not in have))
+        for dom in domains:  # by net: two supply kinds may share one, as on gf180mcuD
+            have = {pdk.rails[p["function"]] for p in pins if p["domain"] == dom and p["function"] in POWER_FUNCTIONS}
+            missing = [r for r in dict.fromkeys(pdk.rails[f] for f in POWER_FUNCTIONS) if r not in have]
             if missing:
                 where = f"Power domain {dom}" if dom else "The IO ring"
                 warnings.append(f"{where} has no {'/'.join(missing)} pad")

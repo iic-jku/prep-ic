@@ -185,6 +185,14 @@ class AnalyseTests(unittest.TestCase):
         set_lines(p, "L", ["VDDIO", "VDD", "VSS", "VSSIO"])
         self.assertFalse(any("pad of domain" in x for x in analyse(p).warnings))
 
+    def test_supply_by_net_where_two_kinds_share_one(self):
+        # on gf180mcuD the IO supply pads are the same dvdd and dvss cells on the core nets VDD and VSS
+        p = chip(sides={"L": ["DVDD [iovdd]", "DVSS [iovss]"]}, macros=[adc(x=0.0, io=())])
+        p.settings.pdk = "gf180mcuD"
+        self.assertFalse(any("pad of domain" in x for x in analyse(p).warnings))
+        p.settings.pdk = "ihp-sg13g2"  # separate nets: the IO supplies do not count
+        self.assertIn("a0: no VDD pad of domain ring within 1000 µm", analyse(p).warnings)
+
     def test_supply_domains(self):
         p = chip(sides={"L": ["=== ANA", "VDD", "VSS"], "R": ["=== DIG", "VDD", "VSS"]}, macros=[adc(x=0.0, io=())])
         lay = p.layout()

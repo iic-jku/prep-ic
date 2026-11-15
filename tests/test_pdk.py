@@ -303,6 +303,15 @@ class Gf180mcuD(unittest.TestCase):
         self.assertEqual((lay.rail("iovdd", ""), lay.rail("iovss", "")), ("VDD", "VSS"))  # the supply pads short the two rings
         self.assertEqual(lay.warnings, [])
 
+    def test_one_pad_per_net_is_a_complete_ring(self):
+        # [vdd] and [iovdd] are one cell on one net, so either pair supplies both rails
+        for pair in (["VDD", "VSS"], ["DVDD [iovdd]", "DVSS [iovss]"], ["VDD", "DVSS [iovss]"]):
+            p = self.project()
+            p.sides["B"] = pair
+            self.assertEqual(p.layout().warnings, [], pair)
+        p.sides["B"] = ["VDD", "DVDD [iovdd]"]
+        self.assertEqual(p.layout().warnings, ["The IO ring has no VSS pad"])
+
     def test_chip_top(self):
         sv = chip_top_sv(self.project().layout())
         for conn in (".PU(1'b0)", ".CS(1'b0)", ".OE(1'b1)", ".IE(1'b0)", ".Y()", ".OE(bi_c2p_en)", ".A(out0_c2p)",
