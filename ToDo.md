@@ -14,9 +14,3 @@ Both profiles are in and go through `OpenROAD.PadRing` with every pad and bond p
 - [ ] **Power splits on sky130A and gf180mcuD (`data/pdks/`).** Both refuse a split with a warning, since their supply buses run through the pads and need a library cell that breaks them. Candidates to check are `sky130_ef_io__disconnect_vccd_slice_5um` and `sky130_ef_io__disconnect_vdda_slice_5um` in sky130, and `__brk2` and `__brk5` in the gf180mcu IO libraries.
 - [ ] **`gf180mcu_ocd_io` (`data/pdks/`).** The image's `libs.ref` holds only `gf180mcu_fd_io`, so the profile covers that library. `gf180mcu_ocd_io` has separate `vdd` and `vss` cells.
 - [ ] **gf180mcuD drive select (`data/pdks/gf180mcud.json`).** Only the fixed 24 mA `__bi_24t` is in the profile. `__bi_t` has the drive select pins `PDRV0` and `PDRV1`, but no file of the PDK says which value selects which current.
-
-## Found while planning the chip templates
-
-The plans of the sky130A and gf180mcuD templates (`doc/prep-ic/chip_top.json` there) showed these gaps.
-
-- [ ] **Bonds across a package corner (`model/layout.py`, `model/pdk.py`).** Pads map to the leads of their own side. A wafer.space slot has 17 pads on each long side and the QFN56 of the gf180mcuD template 14 leads per side, so its bondplan bonds three pads of each long side to the leads of the next side. PREP-IC reports those sides as not fitting, so the template's plan leaves the package out, and only then are its pad numbers the QFN56 pins.

@@ -628,6 +628,30 @@ class Packaging(unittest.TestCase):
         self.assertEqual([x.package_pin for x in top], [27, 28, 29, 30])
         self.assertIn(25, lay.unbonded_leads)
 
+    def test_bonds_across_a_corner(self):
+        # 17 pads on each long side of the slot, 14 leads per QFN56 side: the three last pads of a long side take
+        # the first leads of the next side, as the bondplan of the gf180mcuD template does
+        p = prep.load(ROOT / "examples" / "wafer_space_slot_0p5x0p5.json")
+        p.settings.package = "OP_QFN56_A4_FIT"
+        lay = p.layout()
+        self.assertEqual((lay.warnings, lay.unbonded_leads), ([], []))
+        self.assertEqual([x.package_pin for x in lay.pins], [x.no for x in lay.pins])
+        west = sorted(lay.pins_on("L"), key=lambda x: x.y)  # south to north
+        self.assertEqual([x.package_pin for x in west[:4]], [17, 16, 15, 14])  # 15 to 17 are bottom leads
+        text = bondplan_yaml(lay)
+        self.assertRegex(text, r'\n  15:\s+"bidir_PAD\[35\]"\s+# die pin 15 bidir\[35\], left side of the die\n')
+        self.assertRegex(text, r'\n  14:\s+"bidir_PAD\[34\]"\s+# die pin 14 bidir\[34\]\n')
+
+    def test_pads_without_a_free_lead(self):
+        p = compac_like(package="OP_QFN16_A4_FIT")
+        p.sides = {"L": [f"a{i}" for i in range(6)], "B": ["b0", "b1", "b2"], "R": [], "T": []}
+        lay = p.layout()
+        pin = {x.name: x.package_pin for x in lay.pins}
+        self.assertEqual([pin[n] for n in ("a3", "a4", "a5", "b0", "b1", "b2")], [4, 5, None, 6, 7, 8])  # leads 5 to 8 are bottom
+        self.assertIn("6 pads on the left side, but OP_QFN16_A4_FIT has 4 leads there and 1 free on the bottom side", lay.warnings)
+        p.sides["B"] += ["b3"]  # the bottom side is full: nothing moves
+        self.assertIn("6 pads on the left side, but OP_QFN16_A4_FIT has 4 leads there", p.layout().warnings)
+
     def test_lcc_pin1_top_centre(self):
         leads = prep.get_package("JLCC44_A4").leads()
         self.assertEqual(leads["T"], [40, 41, 42, 43, 44, 1, 2, 3, 4, 5, 6])

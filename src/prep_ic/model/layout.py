@@ -490,29 +490,31 @@ def build_layout(project, selected=None):
         warnings.append("Several power splits start the same domain: the ring segments are separate "
                         "but share net names")
 
-    # Package bonding: pads (with a bondpad) to leads, side by side in counter-clockwise order
+    # Package bonding: pads (with a bondpad) to leads in counter-clockwise order, centred on the leads of their side.
+    # Pads beyond the last lead of a side take the free leads at the start of the next side, as a bondplan bonds
+    # across a corner, and the pads of that side move up. Pad order and lead order stay the same, so no wires cross.
     unbonded = []
     pkg = get_package(cfg.package)
     if cfg.package and pkg is None:
         warnings.append(f"Unknown package '{cfg.package}'")
     if pkg:
         leads = pkg.leads()
+        key = {"L": lambda p: p["cy"], "B": lambda p: p["cx"], "R": lambda p: -p["cy"], "T": lambda p: -p["cx"]}
+        pads = {s: sorted((p for p in pins if p["side"] == s and p["function"] != "none"), key=key[s]) for s in CCW_ORDER}
+        nxt = dict(zip(CCW_ORDER, CCW_ORDER[1:] + CCW_ORDER[:1]))
+        prv = {b: a for a, b in nxt.items()}
+        free = {s: max(0, len(leads[s]) - len(pads[s])) for s in CCW_ORDER}
         for s in CCW_ORDER:
-            pads = [p for p in pins if p["side"] == s and p["function"] != "none"]
-            key = {"L": lambda p: p["cy"], "B": lambda p: p["cx"],
-                   "R": lambda p: -p["cy"], "T": lambda p: -p["cx"]}[s]
-            pads.sort(key=key)
-            ls = leads[s]
-            if len(pads) > len(ls):
-                warnings.append(f"{len(pads)} pads on the {SIDE_NAMES[s].lower()} side, "
-                                f"but {pkg.name} has {len(ls)} leads there")
-            off = max(0, (len(ls) - len(pads)) // 2)
-            used = set()
-            for i, p in enumerate(pads[:len(ls)]):
-                p["package_pin"] = ls[off + i]
-                used.add(ls[off + i])
-            unbonded += [n for n in ls if n not in used]
-        unbonded.sort()
+            ls, own, extra = leads[s], pads[s][:len(leads[s])], pads[s][len(leads[s]):]
+            if len(extra) > free[nxt[s]]:
+                warnings.append(f"{len(pads[s])} pads on the {SIDE_NAMES[s].lower()} side, but {pkg.name} has {len(ls)} leads there"
+                                + (f" and {free[nxt[s]]} free on the {SIDE_NAMES[nxt[s]].lower()} side" if free[nxt[s]] else ""))
+            moved = pads[prv[s]][len(leads[prv[s]]):][:free[s]]
+            off = len(moved) + (len(ls) - len(moved) - len(own)) // 2
+            for p, n in zip(moved + own, ls[:len(moved)] + ls[off:]):
+                p["package_pin"] = n
+        used = {p["package_pin"] for p in pins if p.get("package_pin")}
+        unbonded = sorted(n for s in CCW_ORDER for n in leads[s] if n not in used)
 
     gutter = {}
     for s in SIDES:
