@@ -356,7 +356,7 @@ On sky130A, PREP-IC adds two 20 µm connect cells in front of the first IO suppl
 
 [`examples/`](https://github.com/iic-jku/prep-ic/tree/main/examples) has one project per wafer.space gf180mcuD slot (`wafer_space_slot_*.json`) with the die of the slot, its pad order and positions, and the supply pads locked. Name your signals and save it under a new name. Three slots put an analog pad next to a digital one, which `prep-ic check` reports as `Sensitive pad next to noisy pad`.
 
-The 25 packages are named after the cells of the EUROPRACTICE package library (`EP_PACKAGES_08022018.gds`). Their pins are numbered counter-clockwise, seen from the top.
+The 25 packages are named after the cells of the EUROPRACTICE package library (`EP_PACKAGES_08022018.gds`). Their pins are numbered counter-clockwise, seen from the top. The pads of a side bond to the leads of that side, centred. Pads beyond its last lead take the free leads at the start of the next side, as a bondplan bonds across a corner, and `bondplan_pinout.yaml` names their side. The 17 pads of each long side of the wafer.space slot `0p5x0p5` bond that way to the 14 leads per side of `OP_QFN56_A4_FIT`, and its pad numbers are then the package pins.
 
 | Family | Pins | Pin 1 |
 |---|---|---|

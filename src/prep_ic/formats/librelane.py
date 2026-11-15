@@ -673,7 +673,8 @@ def bondplan_yaml(layout, source=""):
         key = f"{n}:"
         if p:
             item = f'"{names.label[p.no]}"'
-            out.append(f"  {key:<4} {item:<24}  # die pin {p.no} {p.name}")
+            corner = f", {SIDE_NAMES[p.side].lower()} side of the die" if p.side != side else ""
+            out.append(f"  {key:<4} {item:<24}  # die pin {p.no} {p.name}{corner}")
         else:
             out.append(f"  {key:<4} {'~':<24}  # not bonded")
     return "\n".join(out) + "\n"
