@@ -212,13 +212,14 @@ In *Settings → Technology* choose a PDK (IHP SG13G2, IHP SG13CMOS5L, sky130A o
 - **Power splits**: an `=== NAME` line leaves a 10 µm gap in the IO ring of an IHP PDK. sky130A and gf180mcuD have no split cell in their profile yet, so there the line stays in the editor and gets a warning. Every ring segment gets its own rails (`VDD_NAME`, `VSS_NAME`, `IOVDD_NAME`, `IOVSS_NAME`), and without splits they are `VDD`, `VSS`, `IOVDD` and `IOVSS`. PREP-IC warns when a domain has no supply pad of a kind.
 - **The LibreLane tab and *File → Export LibreLane Files…*** write:
   - `padring_config.yaml`: `DIE_AREA`, `CORE_AREA`, `PAD_CFG` and the `PAD_SOUTH/EAST/NORTH/WEST` lists, to copy into the LibreLane `config.yaml` (flow `Chip`),
-  - `pad_cfg.tcl`: places the IO cells exactly as planned (LibreLane's default script spreads them evenly) and keeps the split gaps free,
+  - `pad_cfg.tcl`: places the IO cells exactly as planned (LibreLane's default script spreads them evenly), keeps the split gaps free and places a terminal on every pin that `PAD_PLACE_IO_TERMINALS` lists for a cell, where LibreLane's script stops at the first,
   - `chip_top.sv`: the IO cell instances with the same names, the top-level `*_PAD` ports and the `chip_core` instance,
   - `chip_core_template.sv`: the matching core ports, and with macros the instances to create in the core,
   - `macros.yaml` (with macros): `MACROS` with LEF and GDS, the `vh`, `nl`, `pnl`, `lib` and `spef` views found in LibreLane's layout below `final/`, and the instance locations (`i_chip_core.<instance>`),
   - `bondplan_pinout.yaml` (with a package): `PACKAGE_NAME` and `PINOUT` for the bondplan config.
 - An IHP design must still provide the bondpad cell (`PAD_BONDPAD_NAME`, e.g. `sg13g2_ip__bondpad_70x70` with `EXTRA_LEFS` and `EXTRA_GDS`). The IO cells of sky130A and gf180mcuD carry their own bond pad.
 - On sky130A and gf180mcuD, `padring_config.yaml` ends with a comment naming the IO cells LibreLane's disconnected pin check has to skip (gf180mcuD output pads leave `Y` open, the sky130A connect cells and analog pads mark no pin as a power pin). Add them to `IGNORE_DISCONNECTED_MODULES` in your `config.yaml`. The export writes no key there, since it would replace your own list.
+- On sky130A, list the bus pin of each supply pad in `PAD_PLACE_IO_TERMINALS` after its bond pad pin, for example `sky130_ef_io__vccd_lvc_clamped_pad/VCCD` after `sky130_ef_io__vccd_lvc_clamped_pad/VCCD_PAD`. The supply terminal then sits on the bond pad and on the bus pin that the core ring reaches. The PDK's own list names the bond pad pins only.
 
 See [`examples/ihp_sg13g2_domains.json`](https://github.com/iic-jku/prep-ic/blob/main/examples/ihp_sg13g2_domains.json). From the command line:
 
